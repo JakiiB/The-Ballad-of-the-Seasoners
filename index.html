@@ -223,6 +223,15 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Container for Base + Misc segments to apply mask */
+        .base-misc-container {
+            position: relative; /* Needed for absolute positioning of mask */
+            display: flex;
+            flex-direction: column;
+            width: 100%; /* Take full width of parent */
+            overflow: hidden; /* Ensure mask doesn't overflow */
+        }
+
 
     </style>
 </head>
@@ -281,7 +290,7 @@
     <script>
         // --- Configuration ---
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgOAmGQDoTykeEvaeWQoJDL7PM_Xedty0iqH4HsQ1GHoj_4gD2dheOtNH-4e09uIiZOP6zTQQ3pFSN/pub?output=csv';
-        const REFRESH_INTERVAL_MS = 60000; // *** Changed to 60 seconds (60000 ms) ***
+        const REFRESH_INTERVAL_MS = 60000;
         const MIN_BAR_HEIGHT_PX = 40;
         const MAX_BAR_HEIGHT_PX = 240;
         const YELLOW_THRESHOLD = 0.60;
@@ -293,13 +302,13 @@
         const characterGrid = document.getElementById('character-grid');
         const statusMessage = document.getElementById('status-message');
         const refreshButton = document.getElementById('refresh-button');
-        const refreshButtonContent = document.getElementById('refresh-button-content'); // Span inside button
+        const refreshButtonContent = document.getElementById('refresh-button-content');
         const nerdDataContent = document.getElementById('nerd-data-content');
 
         // --- State ---
         let refreshIntervalId = null;
         let characterStates = {};
-        let isFetching = false; // Prevent multiple simultaneous fetches
+        let isFetching = false;
 
         // --- Core Functions ---
 
@@ -307,36 +316,31 @@
             if (refreshIntervalId) {
                 clearInterval(refreshIntervalId);
                 refreshIntervalId = null;
-                // console.log("[DEBUG] Auto-refresh timer cleared.");
             }
         }
 
         function startAutoRefresh() {
             clearAutoRefresh();
             refreshIntervalId = setInterval(fetchAndProcessData, REFRESH_INTERVAL_MS);
-            // console.log(`[DEBUG] Auto-refresh timer started (${REFRESH_INTERVAL_MS / 1000}s).`);
         }
 
         async function fetchAndProcessData(isManual = false) {
             if (isFetching) {
                 console.log("[DEBUG] Fetch already in progress. Skipping.");
-                return; // Don't start a new fetch if one is already running
+                return;
             }
-            isFetching = true; // Set flag
+            isFetching = true;
 
-            // --- Start of Fetch ---
             console.log(`[DEBUG] Starting fetch... (Manual: ${isManual})`);
-            clearAutoRefresh(); // Clear timer before fetching
+            clearAutoRefresh();
             statusMessage.textContent = 'Fetching latest data...';
             statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border';
             refreshButton.disabled = true;
-            refreshButtonContent.innerHTML = '<div class="spinner"></div> Fetching...'; // Show spinner
+            refreshButtonContent.innerHTML = '<div class="spinner"></div> Fetching...';
             characterGrid.classList.add('grid-updating');
-            // Keep nerd data visible but indicate loading within if needed, or clear it:
-            // nerdDataContent.innerHTML = '<p class="text-center text-gray-500">Loading data...</p>';
+            // nerdDataContent.innerHTML = '<p class="text-center text-gray-500">Loading data...</p>'; // Optionally clear nerd data
 
             try {
-                // --- Fetch Data ---
                 console.log("[DEBUG] Fetching from URL:", `${csvUrl}&t=${Date.now()}`);
                 const response = await fetch(`${csvUrl}&t=${Date.now()}`);
                 console.log("[DEBUG] Fetch response status:", response.status);
@@ -344,39 +348,32 @@
                 const csvData = await response.text();
                 console.log("[DEBUG] CSV Data fetched successfully.");
 
-                // --- Process & Display ---
                 const characters = parseCSV(csvData);
                 console.log("[DEBUG] Parsed characters:", characters.length);
                 displayCharacters(characters);
                 updateCharacterStates(characters);
-                displayNerdData(characters); // Update nerd data after states are updated
+                displayNerdData(characters);
                 console.log("[DEBUG] Display updated.");
 
-
-                // --- Success State ---
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                // *** Shortened success message ***
                 statusMessage.textContent = `Last updated: ${timestamp}`;
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
-                startAutoRefresh(); // Restart the timer ONLY on successful fetch
+                startAutoRefresh();
 
             } catch (error) {
-                // --- Error State ---
                 console.error('[ERROR] Fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
                 statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
-                // Do NOT restart timer on error
+                // nerdDataContent.innerHTML = '<p class="text-center text-red-500">Could not load nerd data.</p>'; // Update nerd data on error
             } finally {
-                // --- End of Fetch (Success or Error) ---
-                refreshButton.disabled = false; // Re-enable button
-                // Restore button content
+                refreshButton.disabled = false;
                 refreshButtonContent.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                     </svg>
                     Refresh Now`;
                 characterGrid.classList.remove('grid-updating');
-                isFetching = false; // Reset flag
+                isFetching = false;
                 console.log("[DEBUG] Fetch process finished.");
             }
         }
@@ -390,28 +387,35 @@
             const data = [];
             const avatarIndex = 1, nameIndex = 2, classLevelIndex = 3;
             const rolledHPIndex = 4, conBonusIndex = 5, featBonusHPIndex = 6;
-            const miscHPIndex = 7, maxHPIndex = 8, currentHPIndex = 9, tempHPIndex = 10; // Added maxHPIndex
+            const miscHPIndex = 7, maxHPIndex = 8, currentHPIndex = 9, tempHPIndex = 10;
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
                 const charName = values[nameIndex];
-                // Updated validation to include maxHPIndex
                 if (values.length > Math.max(nameIndex, rolledHPIndex, conBonusIndex, featBonusHPIndex, miscHPIndex, maxHPIndex, currentHPIndex, tempHPIndex, avatarIndex) && charName) {
                     const charId = `char-${charName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
                     const rolledHP = parseInt(values[rolledHPIndex]) || 0;
                     const conBonus = parseInt(values[conBonusIndex]) || 0;
                     const featBonusHP = parseInt(values[featBonusHPIndex]) || 0;
                     const miscHP = parseInt(values[miscHPIndex]) || 0;
-                    const maxHPFromSheet = parseInt(values[maxHPIndex]) || 0; // Read Max HP from Column I
-                    let currentHPFromSheet = parseInt(values[currentHPIndex]) || 0; // Read Current HP from Column J
-                    const tempHP = parseInt(values[tempHPIndex]) || 0; // Read Temp HP from Column K
+                    const maxHPFromSheet = parseInt(values[maxHPIndex]) || 0;
+                    let currentHPFromSheet = parseInt(values[currentHPIndex]) || 0;
+                    const tempHP = parseInt(values[tempHPIndex]) || 0;
                     const avatarUrl = values[avatarIndex] || '';
-                    const baseMaxHP = rolledHP + conBonus + featBonusHP; // Still needed for bar fill logic
+                    const baseMaxHP = rolledHP + conBonus + featBonusHP;
 
-                    // Capped Current HP for bar mask and color logic (uses baseMaxHP)
-                    const cappedCurrentHP = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
+                    // *** Calculate current HP relevant to Base+Misc pool for masking ***
+                    // Damage comes off Temp first, so if currentHPFromSheet is below baseMaxHP,
+                    // the difference represents damage taken from the Base+Misc pool.
+                    // However, the visual should reflect the state *after* Temp HP is gone.
+                    // So, the value we compare against baseAndMiscMaxHP is simply currentHPFromSheet.
+                    const baseAndMiscMaxHP = baseMaxHP + miscHP;
+                    const currentBaseAndMiscHP = Math.max(0, Math.min(currentHPFromSheet, baseAndMiscMaxHP));
 
-                    // Total effective max for bar scaling (Base + Misc + Temp)
+                    // Capped Current HP for bar *color* logic (still based on Base HP)
+                    const cappedCurrentHPForColor = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
+
+                    // Total effective max for bar *scaling* (Base + Misc + Temp)
                     const totalEffectiveMax = Math.max(1, baseMaxHP + miscHP + tempHP);
 
                     data.push({
@@ -419,19 +423,21 @@
                         name: charName,
                         classLevel: values[classLevelIndex] || 'N/A',
                         avatarUrl: avatarUrl,
-                        currentHP: currentHPFromSheet, // Store raw Current HP from sheet (Column J)
-                        maxHP: maxHPFromSheet, // Store Max HP from sheet (Column I)
-                        cappedCurrentHP: cappedCurrentHP, // Store capped Current HP (for bar mask/color)
-                        tempHP: tempHP,           // Temporary HP (from K)
-                        miscHP: miscHP,           // Miscellaneous HP bonus (from H)
-                        baseMaxHP: baseMaxHP,         // Calculated Base Max (E+F+G)
+                        currentHP: currentHPFromSheet, // Raw Current HP from sheet (Column J)
+                        maxHP: maxHPFromSheet, // Raw Max HP from sheet (Column I)
+                        currentBaseAndMiscHP: currentBaseAndMiscHP, // Current HP within the Base+Misc pool (capped)
+                        cappedCurrentHPForColor: cappedCurrentHPForColor, // Capped Current HP for color logic
+                        tempHP: tempHP,
+                        miscHP: miscHP,
+                        baseMaxHP: baseMaxHP,
+                        baseAndMiscMaxHP: baseAndMiscMaxHP, // Store combined max
                         totalEffectiveMax: totalEffectiveMax,
                         rawRolled: rolledHP,
                         rawCon: conBonus,
                         rawFeat: featBonusHP
                     });
                 } else {
-                    if (lines[i].trim().length > 0 && i > 0) { // Avoid warning on empty lines if header exists
+                    if (lines[i].trim().length > 0 && i > 0) {
                        console.warn(`[WARN] Skipping potentially invalid line ${i + 1}: ${lines[i]}`);
                     }
                 }
@@ -453,32 +459,32 @@
 
                 if (previousState && previousState.data) {
                     const changes = [];
-                    // Compare relevant values for history
-                    if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP}→${char.currentHP}`); // Use raw for history log consistency
+                    // Compare raw current HP for history log consistency
+                    if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP}→${char.currentHP}`);
                     if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP}→${char.tempHP}`);
                     if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP}→${char.miscHP}`);
                     if (changes.length > 0) historyMessage = `${timestamp}: ${changes.join(', ')}`;
                 } else {
-                    // Initial state uses raw current HP
                     historyMessage = `${timestamp}: Initial state: HP ${char.currentHP}, Temp ${char.tempHP}, Misc ${char.miscHP}`;
                 }
 
                 if (historyMessage) {
-                    // Add only if it's different from the most recent history entry to avoid duplicates on no-change refreshes
                     if (!history.length || history[0].substring(history[0].indexOf(':')+1).trim() !== historyMessage.substring(historyMessage.indexOf(':')+1).trim()) {
                          history = [historyMessage, ...history].slice(0, MAX_HISTORY_LENGTH);
-                         console.log(`[HISTORY] ${char.name}: ${historyMessage}`); // Log history update
+                         console.log(`[HISTORY] ${char.name}: ${historyMessage}`);
                     }
                 }
 
                 newStates[char.id] = {
                     data: { // Store data for next comparison
-                        currentHP: char.currentHP, // Store raw current
+                        currentHP: char.currentHP,
                         tempHP: char.tempHP,
                         miscHP: char.miscHP,
                         baseMaxHP: char.baseMaxHP,
-                        cappedCurrentHP: char.cappedCurrentHP, // Still store capped for bar logic
-                        maxHP: char.maxHP // Store maxHP from sheet
+                        // Store all relevant values for comparison
+                        cappedCurrentHPForColor: char.cappedCurrentHPForColor,
+                        currentBaseAndMiscHP: char.currentBaseAndMiscHP,
+                        maxHP: char.maxHP
                     },
                     history: history
                  };
@@ -489,6 +495,7 @@
 
         /**
          * Renders character cards (without nerd data section).
+         * Implements combined masking for Base + Misc HP.
          */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
@@ -504,20 +511,30 @@
             characters.forEach(char => {
                 const card = document.createElement('div');
 
-                // Calculations
+                // --- Calculations ---
+                // Segment percentages based on total potential health (Base + Misc + Temp)
                 const tempPerc = char.totalEffectiveMax > 0 ? (char.tempHP / char.totalEffectiveMax) * 100 : 0;
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
-                const currentBaseFillPerc = char.baseMaxHP > 0 ? (char.cappedCurrentHP / char.baseMaxHP) * 100 : 0;
-                const depletedBasePerc = 100 - currentBaseFillPerc;
+
+                // --- Mask Calculation (Combined Base + Misc) ---
+                // Percentage depletion of the Base+Misc pool
+                const depletionPercPool = char.baseAndMiscMaxHP > 0 ? (1 - (char.currentBaseAndMiscHP / char.baseAndMiscMaxHP)) * 100 : 0;
+                // Combined height percentage of Base+Misc segments
+                const combinedBaseMiscPerc = basePerc + miscPerc;
+                // Mask height as a percentage of the *total bar height*
+                const maskHeightPerc = (depletionPercPool * combinedBaseMiscPerc) / 100;
+
+
+                // --- Height & Color ---
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
 
-                // Determine Health Status Classes
+                // Determine Health Status Classes (Bar Color & Card Border) - Color uses cappedCurrentHPForColor
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
-                const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHP / char.baseMaxHP : 0;
+                const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHPForColor / char.baseMaxHP : 0;
                 if (healthRatio <= RED_THRESHOLD) {
                     baseColorClass = 'bg-red-600';
                     borderColorClass = 'border-red-600';
@@ -529,7 +546,7 @@
                 // Tooltips
                 const barTooltip = `Total Potential: ${char.totalEffectiveMax} (Temp: ${char.tempHP}, Base: ${char.baseMaxHP}, Misc: ${char.miscHP})`;
                 const tempTooltip = `Temp HP: ${char.tempHP}`;
-                const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`; // Tooltip shows capped current
+                const baseTooltip = `Base HP: ${char.cappedCurrentHPForColor} / ${char.baseMaxHP}`; // Shows capped value for color logic
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
                 // Health Text (Format: J / I (+K))
@@ -554,17 +571,26 @@
                 `;
                 const healthBarDiv = document.createElement('div');
                 healthBarDiv.className = 'flex flex-col items-center w-full';
+                // Apply dynamic height to the main health bar container
                 healthBarDiv.innerHTML = `
                     <div class="health-bar bg-gray-600 rounded w-10 flex flex-col overflow-hidden relative border border-gray-500 shadow-inner mb-2"
                          style="height: ${barHeightPx}px;"
                          title="${barTooltip}">
-                        ${char.tempHP > 0 ? `<div class="w-full bg-blue-500 glow-blue flex items-center justify-center text-xs font-bold text-white" style="height: ${tempPerc}%" title="${tempTooltip}"></div>` : ''}
-                        <div class="w-full relative ${baseColorClass}" style="height: ${basePerc}%" title="${baseTooltip}">
-                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80" style="height: ${depletedBasePerc}%"></div>
+
+                        ${char.tempHP > 0 ? `<div class="w-full bg-blue-500 glow-blue flex-shrink-0" style="height: ${tempPerc}%" title="${tempTooltip}"></div>` : ''}
+
+                        <div class="base-misc-container" style="height: ${combinedBaseMiscPerc}%">
+                             <div class="w-full h-full relative ${baseColorClass}" style="height: ${basePerc / combinedBaseMiscPerc * 100}%" title="${baseTooltip}">
+                                </div>
+                             ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex-shrink-0" style="height: ${miscPerc / combinedBaseMiscPerc * 100}%" title="${miscTooltip}"></div>` : ''}
+
+                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80 pointer-events-none"
+                                 style="height: ${depletionPercPool}%">
+                            </div>
                         </div>
-                        ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex items-center justify-center text-xs font-bold text-white" style="height: ${miscPerc}%" title="${miscTooltip}"></div>` : ''}
+
                     </div>
-                    <p class="text-sm text-center font-medium text-gray-300">${healthText}</p> `; // Uses updated healthText
+                    <p class="text-sm text-center font-medium text-gray-300">${healthText}</p> `;
 
                 // Append elements to card
                 card.appendChild(infoDiv);
@@ -573,12 +599,13 @@
             });
         }
 
+
         /**
          * Populates the consolidated "Data for Nerds" section.
          * @param {Array<object>} characters - The current character data array.
          */
         function displayNerdData(characters) {
-            let nerdHtml = ''; // Start with empty content for the inner div
+            let nerdHtml = '';
 
             if (characters.length === 0) {
                 nerdHtml = '<p class="text-center text-gray-500">No character data to display.</p>';
@@ -591,7 +618,7 @@
                  const historyListContent = currentState?.history.map(entry => `<li>${entry}</li>`).join('') || '<li>No history yet.</li>';
                  const textDisplayCurrent = char.currentHP; // Raw from sheet (J)
                  const textDisplayMax = char.maxHP; // Raw from sheet (I)
-                 const barFillCurrent = char.cappedCurrentHP; // Capped value for bar
+                 const barFillCurrent = char.currentBaseAndMiscHP; // Value determining combined bar fill
 
                  nerdHtml += `
                     <div class="nerd-character-section">
@@ -600,7 +627,7 @@
                         <p>Misc HP (H) = <code>${char.miscHP}</code></p>
                         <p>Temp HP (K) = <code>${char.tempHP}</code></p>
                         <p>Text Display = Sheet Current (J) / Sheet Max (I) (+ Temp (K)) = <code>${textDisplayCurrent} / ${textDisplayMax} ${char.tempHP > 0 ? '(+'+char.tempHP+')' : ''}</code></p>
-                        <p>Bar Fill = Sheet Current (J: ${char.currentHP}) capped at Base Max (${char.baseMaxHP}) = <code>${barFillCurrent}</code></p>
+                        <p>Bar Fill = Sheet Current (J: ${char.currentHP}) capped at (Base+Misc) (${char.baseAndMiscMaxHP}) = <code>${barFillCurrent}</code></p>
                         <h5>History (Last ${MAX_HISTORY_LENGTH}):</h5>
                         <ul id="history-list-${char.id}">${historyListContent}</ul>
                     </div>
@@ -613,7 +640,6 @@
 
         // --- Initialization ---
         refreshButton.addEventListener('click', () => {
-            // Pass true to indicate it's a manual refresh
             fetchAndProcessData(true);
         });
         fetchAndProcessData(); // Initial load
