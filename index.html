@@ -281,7 +281,7 @@
     <script>
         // --- Configuration ---
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgOAmGQDoTykeEvaeWQoJDL7PM_Xedty0iqH4HsQ1GHoj_4gD2dheOtNH-4e09uIiZOP6zTQQ3pFSN/pub?output=csv';
-        const REFRESH_INTERVAL_MS = 30000;
+        const REFRESH_INTERVAL_MS = 60000; // *** Changed to 60 seconds (60000 ms) ***
         const MIN_BAR_HEIGHT_PX = 40;
         const MAX_BAR_HEIGHT_PX = 240;
         const YELLOW_THRESHOLD = 0.60;
@@ -355,7 +355,8 @@
 
                 // --- Success State ---
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                statusMessage.textContent = `Data loaded successfully. Auto-refreshing. Last updated: ${timestamp}`;
+                // *** Shortened success message ***
+                statusMessage.textContent = `Last updated: ${timestamp}`;
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
                 startAutoRefresh(); // Restart the timer ONLY on successful fetch
 
