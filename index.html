@@ -35,13 +35,18 @@
             transition: height 0.4s ease-in-out; /* Animate height changes */
         }
         .character-card {
-             transition: border-color 0.3s ease-in-out; /* Animate border color change */
+             transition: border-color 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Animate border color and opacity */
              display: flex;
              flex-direction: column;
              align-items: center; /* Center items horizontally */
              justify-content: flex-start; /* Align items to the top */
              background-color: #1f2937; /* Card Background: gray-800 */
              border-color: #374151; /* Default border gray-700 */
+        }
+        /* Style for dimming cards during update */
+        .grid-updating .character-card {
+            opacity: 0.6;
+            pointer-events: none; /* Prevent interaction during update */
         }
         /* Remove individual segment rounding */
         .health-bar > div {
@@ -109,7 +114,7 @@
         </div>
 
         <div id="character-grid" class="flex flex-row flex-wrap gap-6 justify-center items-start">
-            </div>
+             </div>
     </div>
 
     <script>
@@ -128,36 +133,73 @@
         const refreshButton = document.getElementById('refresh-button');
 
         // --- State ---
-        let refreshIntervalId = null;
+        let refreshIntervalId = null; // Stores the timer ID for auto-refresh
 
         // --- Core Functions ---
+
+        /**
+         * Clears the existing auto-refresh timer.
+         */
+        function clearAutoRefresh() {
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+                refreshIntervalId = null;
+                // console.log("Auto-refresh timer cleared."); // Optional: for debugging
+            }
+        }
+
+        /**
+         * Starts the auto-refresh interval. Clears any existing interval first.
+         */
+        function startAutoRefresh() {
+            clearAutoRefresh(); // Ensure no duplicate timers
+            // Set up the interval to call fetchAndProcessData periodically
+            refreshIntervalId = setInterval(fetchAndProcessData, REFRESH_INTERVAL_MS);
+            // console.log(`Auto-refresh started (${REFRESH_INTERVAL_MS / 1000} seconds).`); // Optional: for debugging
+        }
+
+
+        /**
+         * Fetches data, updates display, handles states, and manages refresh timer.
+         */
         async function fetchAndProcessData() {
+            // --- Start of Fetch ---
+            clearAutoRefresh(); // Clear timer before fetching to prevent overlap
             statusMessage.textContent = 'Fetching latest data...';
-            // Apply loading status class
             statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border';
             refreshButton.disabled = true;
             refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+            characterGrid.classList.add('grid-updating'); // Dim the grid visually
 
             try {
+                // --- Fetch Data ---
                 const response = await fetch(`${csvUrl}&t=${Date.now()}`);
                 if (!response.ok) throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 const csvData = await response.text();
+
+                // --- Process & Display ---
                 const characters = parseCSV(csvData);
-                displayCharacters(characters);
+                displayCharacters(characters); // Update the UI
+
+                // --- Success State ---
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Data loaded successfully. Auto-refreshing. Last updated: ${timestamp}`;
-                 // Apply success status class
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
+                startAutoRefresh(); // Restart the timer ONLY on successful fetch and display
 
             } catch (error) {
+                // --- Error State ---
                 console.error('Error fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
-                // Apply error status class
-                 statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
-                characterGrid.innerHTML = '<p class="text-center text-red-400 w-full">Could not load character data.</p>';
+                statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
+                // Do NOT restart timer on error, wait for manual refresh or next attempt if logic allows
+                // Optionally clear the grid or leave stale data? Leaving stale for now.
+                // characterGrid.innerHTML = '<p class="text-center text-red-400 w-full">Could not load character data.</p>';
             } finally {
-                refreshButton.disabled = false;
+                // --- End of Fetch (Success or Error) ---
+                refreshButton.disabled = false; // Re-enable button
                 refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                characterGrid.classList.remove('grid-updating'); // Un-dim the grid
             }
         }
 
@@ -211,7 +253,7 @@
          * Text format: Current / Max (+Temp)
          */
         function displayCharacters(characters) {
-            characterGrid.innerHTML = '';
+            characterGrid.innerHTML = ''; // Clear previous cards
 
             if (characters.length === 0) {
                 characterGrid.innerHTML = '<p class="text-center text-gray-400 w-full">No valid character data found.</p>';
@@ -224,7 +266,7 @@
             characters.forEach(char => {
                 const card = document.createElement('div');
 
-                // --- Calculations (Bar Segments, Mask, Height) ---
+                // Calculations (Bar Segments, Mask, Height)
                 const tempPerc = char.totalEffectiveMax > 0 ? (char.tempHP / char.totalEffectiveMax) * 100 : 0;
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
@@ -234,38 +276,33 @@
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
 
-                // --- Determine Health Status Classes (Bar Color & Card Border) ---
+                // Determine Health Status Classes (Bar Color & Card Border)
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700'; // Default border color from CSS
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHP / char.baseMaxHP : 0;
-
                 if (healthRatio <= RED_THRESHOLD) {
                     baseColorClass = 'bg-red-600';
-                    borderColorClass = 'border-red-600'; // Tailwind red
+                    borderColorClass = 'border-red-600';
                 } else if (healthRatio <= YELLOW_THRESHOLD) {
                     baseColorClass = 'bg-yellow-500';
-                    borderColorClass = 'border-yellow-500'; // Tailwind yellow
+                    borderColorClass = 'border-yellow-500';
                 }
 
-                // --- Tooltips ---
+                // Tooltips
                 const barTooltip = `Total Potential: ${char.totalEffectiveMax} (Temp: ${char.tempHP}, Base: ${char.baseMaxHP}, Misc: ${char.miscHP})`;
                 const tempTooltip = `Temp HP: ${char.tempHP}`;
                 const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`;
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
-                // --- Health Text (Format: Current / Max (+Temp)) ---
-                // Conditionally create the (+X) string for Temp HP
+                // Health Text (Format: Current / Max (+Temp))
                 const tempHpString = char.tempHP > 0 ? ` (+${char.tempHP})` : '';
-                // Denominator for text is Base Max HP (D+E+F) + Misc HP (G)
                 const maxEffectiveHpText = char.baseMaxHP + char.miscHP;
-                // Uses the raw currentHP from the sheet (Column I)
-                const healthText = `${char.currentHP} / ${maxEffectiveHpText}${tempHpString}`; // Temp HP string appended at the end
+                const healthText = `${char.currentHP} / ${maxEffectiveHpText}${tempHpString}`;
 
-                // --- Set Card Classes ---
+                // Set Card Classes
                 card.className = `character-card text-gray-100 rounded-lg shadow-lg p-4 border-2 ${borderColorClass} flex flex-col items-center gap-3 min-w-[150px]`;
 
-                // --- Construct Card HTML ---
-                // Info Section (Avatar + Name/Level)
+                // Construct Card HTML
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'info-section mb-2';
                 infoDiv.innerHTML = `
@@ -278,8 +315,6 @@
                         <p class="text-xs text-gray-400 whitespace-nowrap">${char.classLevel}</p>
                     </div>
                 `;
-
-                // Health Bar Section
                 const healthBarDiv = document.createElement('div');
                 healthBarDiv.className = 'flex flex-col items-center w-full';
                 healthBarDiv.innerHTML = `
@@ -316,19 +351,15 @@
             });
         }
 
-        function startAutoRefresh() {
-            if (refreshIntervalId) clearInterval(refreshIntervalId);
-            refreshIntervalId = setInterval(fetchAndProcessData, REFRESH_INTERVAL_MS);
-            console.log(`Auto-refresh started (${REFRESH_INTERVAL_MS / 1000} seconds).`);
-        }
-
         // --- Initialization ---
+        // Add event listener for the manual refresh button
         refreshButton.addEventListener('click', () => {
             console.log("Manual refresh triggered.");
-            fetchAndProcessData();
+            fetchAndProcessData(); // Fetch immediately on click, which will also clear/reset the timer
         });
-        fetchAndProcessData();
-        startAutoRefresh();
+
+        // Perform the initial data load when the script runs
+        fetchAndProcessData(); // This will also start the auto-refresh timer on success
 
     </script>
 
