@@ -207,6 +207,22 @@
              color: #e5e7eb; /* gray-200 */
          }
 
+         /* Spinner for refresh button */
+        .spinner {
+            display: inline-block;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            width: 1em; /* Size relative to font size */
+            height: 1em;
+            animation: spin 1s ease-infinite;
+            margin-right: 0.5rem; /* space between spinner and text */
+            vertical-align: middle; /* Align with text */
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
 
     </style>
 </head>
@@ -219,11 +235,13 @@
         </div>
 
         <div class="flex justify-center mb-6">
-            <button id="refresh-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                </svg>
-                Refresh Now
+            <button id="refresh-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center min-w-[150px]">
+                <span id="refresh-button-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    Refresh Now
+                 </span>
             </button>
         </div>
 
@@ -275,11 +293,13 @@
         const characterGrid = document.getElementById('character-grid');
         const statusMessage = document.getElementById('status-message');
         const refreshButton = document.getElementById('refresh-button');
+        const refreshButtonContent = document.getElementById('refresh-button-content'); // Span inside button
         const nerdDataContent = document.getElementById('nerd-data-content');
 
         // --- State ---
         let refreshIntervalId = null;
         let characterStates = {};
+        let isFetching = false; // Prevent multiple simultaneous fetches
 
         // --- Core Functions ---
 
@@ -287,52 +307,76 @@
             if (refreshIntervalId) {
                 clearInterval(refreshIntervalId);
                 refreshIntervalId = null;
+                // console.log("[DEBUG] Auto-refresh timer cleared.");
             }
         }
 
         function startAutoRefresh() {
             clearAutoRefresh();
             refreshIntervalId = setInterval(fetchAndProcessData, REFRESH_INTERVAL_MS);
+            // console.log(`[DEBUG] Auto-refresh timer started (${REFRESH_INTERVAL_MS / 1000}s).`);
         }
 
-        async function fetchAndProcessData() {
-            clearAutoRefresh();
+        async function fetchAndProcessData(isManual = false) {
+            if (isFetching) {
+                console.log("[DEBUG] Fetch already in progress. Skipping.");
+                return; // Don't start a new fetch if one is already running
+            }
+            isFetching = true; // Set flag
+
+            // --- Start of Fetch ---
+            console.log(`[DEBUG] Starting fetch... (Manual: ${isManual})`);
+            clearAutoRefresh(); // Clear timer before fetching
             statusMessage.textContent = 'Fetching latest data...';
             statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border';
             refreshButton.disabled = true;
-            refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+            refreshButtonContent.innerHTML = '<div class="spinner"></div> Fetching...'; // Show spinner
             characterGrid.classList.add('grid-updating');
-            nerdDataContent.innerHTML = '<p class="text-center text-gray-500">Loading data...</p>';
+            // Keep nerd data visible but indicate loading within if needed, or clear it:
+            // nerdDataContent.innerHTML = '<p class="text-center text-gray-500">Loading data...</p>';
 
             try {
+                // --- Fetch Data ---
+                console.log("[DEBUG] Fetching from URL:", `${csvUrl}&t=${Date.now()}`);
                 const response = await fetch(`${csvUrl}&t=${Date.now()}`);
+                console.log("[DEBUG] Fetch response status:", response.status);
                 if (!response.ok) throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 const csvData = await response.text();
+                console.log("[DEBUG] CSV Data fetched successfully.");
+
+                // --- Process & Display ---
                 const characters = parseCSV(csvData);
-
-                // Update display (cards only now)
+                console.log("[DEBUG] Parsed characters:", characters.length);
                 displayCharacters(characters);
-
-                // Update characterStates *after* display has used the old data for comparison
                 updateCharacterStates(characters);
+                displayNerdData(characters); // Update nerd data after states are updated
+                console.log("[DEBUG] Display updated.");
 
-                // Populate the consolidated nerd data section
-                displayNerdData(characters);
 
+                // --- Success State ---
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Data loaded successfully. Auto-refreshing. Last updated: ${timestamp}`;
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
-                startAutoRefresh();
+                startAutoRefresh(); // Restart the timer ONLY on successful fetch
 
             } catch (error) {
-                console.error('Error fetching or processing data:', error);
+                // --- Error State ---
+                console.error('[ERROR] Fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
                 statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
-                nerdDataContent.innerHTML = '<p class="text-center text-red-500">Could not load nerd data.</p>';
+                // Do NOT restart timer on error
             } finally {
-                refreshButton.disabled = false;
-                refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                // --- End of Fetch (Success or Error) ---
+                refreshButton.disabled = false; // Re-enable button
+                // Restore button content
+                refreshButtonContent.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    Refresh Now`;
                 characterGrid.classList.remove('grid-updating');
+                isFetching = false; // Reset flag
+                console.log("[DEBUG] Fetch process finished.");
             }
         }
 
@@ -386,8 +430,8 @@
                         rawFeat: featBonusHP
                     });
                 } else {
-                    if (lines[i].trim().length > 0) {
-                       console.warn(`Skipping potentially invalid line ${i + 1}: ${lines[i]}`);
+                    if (lines[i].trim().length > 0 && i > 0) { // Avoid warning on empty lines if header exists
+                       console.warn(`[WARN] Skipping potentially invalid line ${i + 1}: ${lines[i]}`);
                     }
                 }
             }
@@ -408,10 +452,10 @@
 
                 if (previousState && previousState.data) {
                     const changes = [];
-                    // Compare raw current HP for history now, as text display uses it
-                    if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP} → ${char.currentHP}`);
-                    if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP} → ${char.tempHP}`);
-                    if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP} → ${char.miscHP}`);
+                    // Compare relevant values for history
+                    if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP}→${char.currentHP}`); // Use raw for history log consistency
+                    if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP}→${char.tempHP}`);
+                    if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP}→${char.miscHP}`);
                     if (changes.length > 0) historyMessage = `${timestamp}: ${changes.join(', ')}`;
                 } else {
                     // Initial state uses raw current HP
@@ -419,7 +463,11 @@
                 }
 
                 if (historyMessage) {
-                    history = [historyMessage, ...history].slice(0, MAX_HISTORY_LENGTH);
+                    // Add only if it's different from the most recent history entry to avoid duplicates on no-change refreshes
+                    if (!history.length || history[0].substring(history[0].indexOf(':')+1).trim() !== historyMessage.substring(historyMessage.indexOf(':')+1).trim()) {
+                         history = [historyMessage, ...history].slice(0, MAX_HISTORY_LENGTH);
+                         console.log(`[HISTORY] ${char.name}: ${historyMessage}`); // Log history update
+                    }
                 }
 
                 newStates[char.id] = {
@@ -459,14 +507,13 @@
                 const tempPerc = char.totalEffectiveMax > 0 ? (char.tempHP / char.totalEffectiveMax) * 100 : 0;
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
-                // Bar mask still uses cappedCurrentHP vs baseMaxHP
                 const currentBaseFillPerc = char.baseMaxHP > 0 ? (char.cappedCurrentHP / char.baseMaxHP) * 100 : 0;
                 const depletedBasePerc = 100 - currentBaseFillPerc;
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
 
-                // Determine Health Status Classes (still uses cappedCurrentHP vs baseMaxHP)
+                // Determine Health Status Classes
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHP / char.baseMaxHP : 0;
@@ -484,9 +531,8 @@
                 const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`; // Tooltip shows capped current
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
-                // --- Health Text (Format: J / I (+K)) ---
+                // Health Text (Format: J / I (+K))
                 const tempHpString = char.tempHP > 0 ? ` (+${char.tempHP})` : '';
-                // Use raw currentHP (J) and raw maxHP (I) from sheet
                 const healthText = `${char.currentHP} / ${char.maxHP}${tempHpString}`;
 
                 // Set Card Classes
@@ -566,8 +612,8 @@
 
         // --- Initialization ---
         refreshButton.addEventListener('click', () => {
-            console.log("Manual refresh triggered.");
-            fetchAndProcessData();
+            // Pass true to indicate it's a manual refresh
+            fetchAndProcessData(true);
         });
         fetchAndProcessData(); // Initial load
 
