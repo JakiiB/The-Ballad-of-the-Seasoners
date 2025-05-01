@@ -115,13 +115,96 @@
              width: 0.33rem; /* Smaller width for combined look */
              height: 1rem;
          }
-         .key-border-swatch {
-             width: 1rem; /* 16px */
-             height: 1rem; /* 16px */
-             border-radius: 0.125rem; /* rounded-sm */
-             border-width: 2px;
-             background-color: #1f2937; /* Match card background */
-             flex-shrink: 0;
+
+         /* Nerd Data Section Styling */
+          #nerd-data-wrapper details { /* Target details within the wrapper */
+             margin-top: 1.5rem; /* Space above */
+             border: 1px dashed #4b5563; /* Dashed border on details */
+             border-radius: 0.375rem; /* rounded-md */
+             background-color: rgba(31, 41, 55, 0.5); /* gray-800 with transparency */
+             max-width: 42rem; /* max-w-lg */
+             margin-left: auto;
+             margin-right: auto;
+             padding: 0; /* Remove padding from details itself */
+         }
+         #nerd-data-wrapper summary { /* Target summary within the wrapper */
+             cursor: pointer;
+             padding: 0.5rem 1rem; /* Padding for the clickable header */
+             color: #d1d5db; /* gray-300 */
+             font-weight: 600; /* font-semibold */
+             list-style: none; /* Remove default marker */
+             position: relative;
+             user-select: none; /* Prevent text selection */
+             border-bottom: 1px solid #4b5563; /* Line below summary when closed */
+         }
+          #nerd-data-wrapper details[open] > summary {
+             border-bottom: 1px solid #4b5563; /* Keep line when open */
+         }
+         #nerd-data-wrapper summary::-webkit-details-marker { display: none; } /* Hide marker in Chrome/Safari */
+         #nerd-data-wrapper summary::before { /* Custom marker */
+             content: '►';
+             margin-right: 0.5rem;
+             font-size: 0.8rem;
+             transition: transform 0.2s;
+             display: inline-block; /* Needed for transform */
+         }
+         #nerd-data-wrapper details[open] > summary::before {
+             transform: rotate(90deg);
+         }
+
+         #nerd-data-content { /* The actual content area */
+             padding: 1rem;
+             font-size: 0.75rem; /* text-xs */
+             color: #9ca3af; /* gray-400 */
+         }
+
+         .nerd-character-section {
+             margin-bottom: 1rem;
+             padding-bottom: 1rem;
+             border-bottom: 1px solid #4b5563; /* gray-600 */
+         }
+          .nerd-character-section:last-child {
+             margin-bottom: 0;
+             padding-bottom: 0;
+             border-bottom: none;
+         }
+         #nerd-data-content h4 { /* Character name */
+             font-weight: 600; /* font-semibold */
+             color: #e5e7eb; /* gray-200 */
+             margin-bottom: 0.5rem;
+         }
+         #nerd-data-content h5 { /* Sub-heading like History */
+             font-weight: 600; /* font-semibold */
+             color: #d1d5db; /* gray-300 */
+             margin-top: 0.75rem; /* Space above sub-heading */
+             margin-bottom: 0.25rem;
+         }
+         #nerd-data-content p {
+             margin-bottom: 0.125rem; /* Space between paragraphs */
+         }
+         #nerd-data-content ul {
+             list-style-type: none;
+             padding-left: 0;
+             margin-top: 0.5rem;
+             max-height: 150px; /* Limit history height */
+             overflow-y: auto; /* Scroll for history */
+         }
+         #nerd-data-content li {
+             margin-bottom: 0.25rem; /* Increased space */
+             border-bottom: 1px solid #374151; /* gray-700 */
+             padding-bottom: 0.25rem; /* Increased space */
+             font-size: 0.7rem; /* Smaller font for history */
+         }
+          #nerd-data-content li:last-child {
+             border-bottom: none; /* Remove border from last item */
+             margin-bottom: 0;
+         }
+         #nerd-data-content code {
+             background-color: #374151; /* gray-700 */
+             padding: 0.1rem 0.3rem;
+             border-radius: 0.25rem;
+             font-size: 0.7rem;
+             color: #e5e7eb; /* gray-200 */
          }
 
 
@@ -151,22 +234,28 @@
         <div id="character-grid" class="flex flex-row flex-wrap gap-6 justify-center items-start">
              </div>
 
-        <div id="key" class="mt-10 pt-6 border-t border-gray-700 max-w-md mx-auto text-xs text-gray-400">
+        <div id="key" class="mt-10 pt-6 border-t border-gray-700 max-w-xs mx-auto text-xs text-gray-400">
             <h3 class="text-sm font-semibold text-gray-200 text-center mb-3">Legend</h3>
-            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
-                <div>
-                    <div class="key-item"><div class="key-swatch bg-blue-500"></div><span>Temporary HP</span></div>
-                    <div class="key-item">
-                        <div class="key-swatch-multi">
-                            <div class="bg-green-500"></div>
-                            <div class="bg-yellow-500"></div>
-                            <div class="bg-red-600"></div>
-                        </div>
-                        <span>Base HP (Green/Yellow/Red)</span>
+            <div class="flex flex-col items-center"> <div class="key-item"><div class="key-swatch bg-blue-500"></div><span>Temporary HP</span></div>
+                <div class="key-item">
+                    <div class="key-swatch-multi">
+                        <div class="bg-green-500"></div>
+                        <div class="bg-yellow-500"></div>
+                        <div class="bg-red-600"></div>
                     </div>
-                    <div class="key-item"><div class="key-swatch bg-purple-600"></div><span>Hero's Feast / Misc</span></div>
-                 </div>
-            </div>
+                    <span>Base HP</span>
+                </div>
+                <div class="key-item"><div class="key-swatch bg-purple-600"></div><span>Hero's Feast</span></div>
+                </div>
+        </div>
+
+        <div id="nerd-data-wrapper">
+            <details>
+                <summary>Data For Nerds</summary>
+                <div id="nerd-data-content">
+                    <p class="text-center text-gray-500">Loading data...</p>
+                </div>
+            </details>
         </div>
 
     </div>
@@ -175,19 +264,22 @@
         // --- Configuration ---
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgOAmGQDoTykeEvaeWQoJDL7PM_Xedty0iqH4HsQ1GHoj_4gD2dheOtNH-4e09uIiZOP6zTQQ3pFSN/pub?output=csv';
         const REFRESH_INTERVAL_MS = 30000;
-        const MIN_BAR_HEIGHT_PX = 40;  // Reduced minimum height for better scaling
-        const MAX_BAR_HEIGHT_PX = 240; // Maximum height remains the same
+        const MIN_BAR_HEIGHT_PX = 40;
+        const MAX_BAR_HEIGHT_PX = 240;
         const YELLOW_THRESHOLD = 0.60;
         const RED_THRESHOLD = 0.25;
         const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/60x60/374151/ffffff?text=?';
+        const MAX_HISTORY_LENGTH = 10;
 
         // --- DOM References ---
         const characterGrid = document.getElementById('character-grid');
         const statusMessage = document.getElementById('status-message');
         const refreshButton = document.getElementById('refresh-button');
+        const nerdDataContent = document.getElementById('nerd-data-content');
 
         // --- State ---
         let refreshIntervalId = null;
+        let characterStates = {};
 
         // --- Core Functions ---
 
@@ -210,13 +302,23 @@
             refreshButton.disabled = true;
             refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
             characterGrid.classList.add('grid-updating');
+            nerdDataContent.innerHTML = '<p class="text-center text-gray-500">Loading data...</p>';
 
             try {
                 const response = await fetch(`${csvUrl}&t=${Date.now()}`);
                 if (!response.ok) throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 const csvData = await response.text();
                 const characters = parseCSV(csvData);
+
+                // Update display (cards only now)
                 displayCharacters(characters);
+
+                // Update characterStates *after* display has used the old data for comparison
+                updateCharacterStates(characters);
+
+                // Populate the consolidated nerd data section
+                displayNerdData(characters);
+
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Data loaded successfully. Auto-refreshing. Last updated: ${timestamp}`;
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
@@ -226,6 +328,7 @@
                 console.error('Error fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
                 statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
+                nerdDataContent.innerHTML = '<p class="text-center text-red-500">Could not load nerd data.</p>';
             } finally {
                 refreshButton.disabled = false;
                 refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -233,37 +336,54 @@
             }
         }
 
+        /**
+         * Parses CSV text into character objects including the Avatar URL.
+         * Reads Max HP from sheet (Column I) for text display.
+         */
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             const data = [];
             const avatarIndex = 1, nameIndex = 2, classLevelIndex = 3;
             const rolledHPIndex = 4, conBonusIndex = 5, featBonusHPIndex = 6;
-            const miscHPIndex = 7, currentHPIndex = 9, tempHPIndex = 10;
+            const miscHPIndex = 7, maxHPIndex = 8, currentHPIndex = 9, tempHPIndex = 10; // Added maxHPIndex
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
-                if (values.length > Math.max(nameIndex, rolledHPIndex, conBonusIndex, featBonusHPIndex, miscHPIndex, currentHPIndex, tempHPIndex, avatarIndex) && values[nameIndex]) {
+                const charName = values[nameIndex];
+                // Updated validation to include maxHPIndex
+                if (values.length > Math.max(nameIndex, rolledHPIndex, conBonusIndex, featBonusHPIndex, miscHPIndex, maxHPIndex, currentHPIndex, tempHPIndex, avatarIndex) && charName) {
+                    const charId = `char-${charName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
                     const rolledHP = parseInt(values[rolledHPIndex]) || 0;
                     const conBonus = parseInt(values[conBonusIndex]) || 0;
                     const featBonusHP = parseInt(values[featBonusHPIndex]) || 0;
                     const miscHP = parseInt(values[miscHPIndex]) || 0;
-                    let currentHPFromSheet = parseInt(values[currentHPIndex]) || 0;
-                    const tempHP = parseInt(values[tempHPIndex]) || 0;
+                    const maxHPFromSheet = parseInt(values[maxHPIndex]) || 0; // Read Max HP from Column I
+                    let currentHPFromSheet = parseInt(values[currentHPIndex]) || 0; // Read Current HP from Column J
+                    const tempHP = parseInt(values[tempHPIndex]) || 0; // Read Temp HP from Column K
                     const avatarUrl = values[avatarIndex] || '';
-                    const baseMaxHP = rolledHP + conBonus + featBonusHP;
+                    const baseMaxHP = rolledHP + conBonus + featBonusHP; // Still needed for bar fill logic
+
+                    // Capped Current HP for bar mask and color logic (uses baseMaxHP)
                     const cappedCurrentHP = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
+
+                    // Total effective max for bar scaling (Base + Misc + Temp)
                     const totalEffectiveMax = Math.max(1, baseMaxHP + miscHP + tempHP);
 
                     data.push({
-                        name: values[nameIndex],
+                        id: charId,
+                        name: charName,
                         classLevel: values[classLevelIndex] || 'N/A',
                         avatarUrl: avatarUrl,
-                        currentHP: currentHPFromSheet,
-                        cappedCurrentHP: cappedCurrentHP,
-                        tempHP: tempHP,
-                        miscHP: miscHP,
-                        baseMaxHP: baseMaxHP,
-                        totalEffectiveMax: totalEffectiveMax
+                        currentHP: currentHPFromSheet, // Store raw Current HP from sheet (Column J)
+                        maxHP: maxHPFromSheet, // Store Max HP from sheet (Column I)
+                        cappedCurrentHP: cappedCurrentHP, // Store capped Current HP (for bar mask/color)
+                        tempHP: tempHP,           // Temporary HP (from K)
+                        miscHP: miscHP,           // Miscellaneous HP bonus (from H)
+                        baseMaxHP: baseMaxHP,         // Calculated Base Max (E+F+G)
+                        totalEffectiveMax: totalEffectiveMax,
+                        rawRolled: rolledHP,
+                        rawCon: conBonus,
+                        rawFeat: featBonusHP
                     });
                 } else {
                     if (lines[i].trim().length > 0) {
@@ -274,6 +394,53 @@
             return data;
         }
 
+         /**
+         * Updates the global characterStates object with new data and history.
+         */
+        function updateCharacterStates(characters) {
+            const newStates = {};
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            characters.forEach(char => {
+                const previousState = characterStates[char.id];
+                let history = previousState ? previousState.history : [];
+                let historyMessage = '';
+
+                if (previousState && previousState.data) {
+                    const changes = [];
+                    // Compare raw current HP for history now, as text display uses it
+                    if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP} → ${char.currentHP}`);
+                    if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP} → ${char.tempHP}`);
+                    if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP} → ${char.miscHP}`);
+                    if (changes.length > 0) historyMessage = `${timestamp}: ${changes.join(', ')}`;
+                } else {
+                    // Initial state uses raw current HP
+                    historyMessage = `${timestamp}: Initial state: HP ${char.currentHP}, Temp ${char.tempHP}, Misc ${char.miscHP}`;
+                }
+
+                if (historyMessage) {
+                    history = [historyMessage, ...history].slice(0, MAX_HISTORY_LENGTH);
+                }
+
+                newStates[char.id] = {
+                    data: { // Store data for next comparison
+                        currentHP: char.currentHP, // Store raw current
+                        tempHP: char.tempHP,
+                        miscHP: char.miscHP,
+                        baseMaxHP: char.baseMaxHP,
+                        cappedCurrentHP: char.cappedCurrentHP, // Still store capped for bar logic
+                        maxHP: char.maxHP // Store maxHP from sheet
+                    },
+                    history: history
+                 };
+            });
+            characterStates = newStates;
+        }
+
+
+        /**
+         * Renders character cards (without nerd data section).
+         */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
 
@@ -288,17 +455,18 @@
             characters.forEach(char => {
                 const card = document.createElement('div');
 
-                // Calculations (Bar Segments, Mask, Height)
+                // Calculations
                 const tempPerc = char.totalEffectiveMax > 0 ? (char.tempHP / char.totalEffectiveMax) * 100 : 0;
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
+                // Bar mask still uses cappedCurrentHP vs baseMaxHP
                 const currentBaseFillPerc = char.baseMaxHP > 0 ? (char.cappedCurrentHP / char.baseMaxHP) * 100 : 0;
                 const depletedBasePerc = 100 - currentBaseFillPerc;
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
 
-                // Determine Health Status Classes (Bar Color & Card Border)
+                // Determine Health Status Classes (still uses cappedCurrentHP vs baseMaxHP)
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHP / char.baseMaxHP : 0;
@@ -313,18 +481,18 @@
                 // Tooltips
                 const barTooltip = `Total Potential: ${char.totalEffectiveMax} (Temp: ${char.tempHP}, Base: ${char.baseMaxHP}, Misc: ${char.miscHP})`;
                 const tempTooltip = `Temp HP: ${char.tempHP}`;
-                const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`;
+                const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`; // Tooltip shows capped current
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
-                // Health Text (Format: Current / Max (+Temp) - using CAPPED current HP)
+                // --- Health Text (Format: J / I (+K)) ---
                 const tempHpString = char.tempHP > 0 ? ` (+${char.tempHP})` : '';
-                const maxEffectiveHpText = char.baseMaxHP + char.miscHP;
-                const healthText = `${char.cappedCurrentHP} / ${maxEffectiveHpText}${tempHpString}`;
+                // Use raw currentHP (J) and raw maxHP (I) from sheet
+                const healthText = `${char.currentHP} / ${char.maxHP}${tempHpString}`;
 
                 // Set Card Classes
                 card.className = `character-card text-gray-100 rounded-lg shadow-lg p-4 border-2 ${borderColorClass} flex flex-col items-center gap-3 min-w-[150px]`;
 
-                // Construct Card HTML
+                // Construct Card HTML (Info + Bar only)
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'info-section mb-2';
                 infoDiv.innerHTML = `
@@ -343,42 +511,65 @@
                     <div class="health-bar bg-gray-600 rounded w-10 flex flex-col overflow-hidden relative border border-gray-500 shadow-inner mb-2"
                          style="height: ${barHeightPx}px;"
                          title="${barTooltip}">
-
-                        ${char.tempHP > 0 ? `
-                        <div class="w-full bg-blue-500 glow-blue flex items-center justify-center text-xs font-bold text-white"
-                             style="height: ${tempPerc}%"
-                             title="${tempTooltip}">
-                        </div>` : ''}
-
-                         <div class="w-full relative ${baseColorClass}"
-                             style="height: ${basePerc}%"
-                             title="${baseTooltip}">
-                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80"
-                                 style="height: ${depletedBasePerc}%">
-                            </div>
+                        ${char.tempHP > 0 ? `<div class="w-full bg-blue-500 glow-blue flex items-center justify-center text-xs font-bold text-white" style="height: ${tempPerc}%" title="${tempTooltip}"></div>` : ''}
+                        <div class="w-full relative ${baseColorClass}" style="height: ${basePerc}%" title="${baseTooltip}">
+                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80" style="height: ${depletedBasePerc}%"></div>
                         </div>
-
-                        ${char.miscHP > 0 ? `
-                        <div class="w-full bg-purple-600 glow-purple flex items-center justify-center text-xs font-bold text-white"
-                             style="height: ${miscPerc}%"
-                             title="${miscTooltip}">
-                        </div>` : ''}
+                        ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex items-center justify-center text-xs font-bold text-white" style="height: ${miscPerc}%" title="${miscTooltip}"></div>` : ''}
                     </div>
-                    <p class="text-sm text-center font-medium text-gray-300">${healthText}</p> `;
+                    <p class="text-sm text-center font-medium text-gray-300">${healthText}</p> `; // Uses updated healthText
 
-                // Append elements
+                // Append elements to card
                 card.appendChild(infoDiv);
                 card.appendChild(healthBarDiv);
                 characterGrid.appendChild(card);
             });
         }
 
+        /**
+         * Populates the consolidated "Data for Nerds" section.
+         * @param {Array<object>} characters - The current character data array.
+         */
+        function displayNerdData(characters) {
+            let nerdHtml = ''; // Start with empty content for the inner div
+
+            if (characters.length === 0) {
+                nerdHtml = '<p class="text-center text-gray-500">No character data to display.</p>';
+                nerdDataContent.innerHTML = nerdHtml;
+                return;
+            }
+
+            characters.forEach(char => {
+                 const currentState = characterStates[char.id];
+                 const historyListContent = currentState?.history.map(entry => `<li>${entry}</li>`).join('') || '<li>No history yet.</li>';
+                 const textDisplayCurrent = char.currentHP; // Raw from sheet (J)
+                 const textDisplayMax = char.maxHP; // Raw from sheet (I)
+                 const barFillCurrent = char.cappedCurrentHP; // Capped value for bar
+
+                 nerdHtml += `
+                    <div class="nerd-character-section">
+                        <h4>${char.name}</h4>
+                        <p>Base HP = Rolled (${char.rawRolled}) + CON (${char.rawCon}) + Feat (${char.rawFeat}) = <code>${char.baseMaxHP}</code></p>
+                        <p>Misc HP (H) = <code>${char.miscHP}</code></p>
+                        <p>Temp HP (K) = <code>${char.tempHP}</code></p>
+                        <p>Text Display = Sheet Current (J) / Sheet Max (I) (+ Temp (K)) = <code>${textDisplayCurrent} / ${textDisplayMax} ${char.tempHP > 0 ? '(+'+char.tempHP+')' : ''}</code></p>
+                        <p>Bar Fill = Sheet Current (J: ${char.currentHP}) capped at Base Max (${char.baseMaxHP}) = <code>${barFillCurrent}</code></p>
+                        <h5>History (Last ${MAX_HISTORY_LENGTH}):</h5>
+                        <ul id="history-list-${char.id}">${historyListContent}</ul>
+                    </div>
+                 `;
+            });
+
+            nerdDataContent.innerHTML = nerdHtml; // Update the content container
+        }
+
+
         // --- Initialization ---
         refreshButton.addEventListener('click', () => {
             console.log("Manual refresh triggered.");
             fetchAndProcessData();
         });
-        fetchAndProcessData();
+        fetchAndProcessData(); // Initial load
 
     </script>
 
