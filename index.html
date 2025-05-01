@@ -90,6 +90,41 @@
          .status-error { color: #f87171; } /* red-400 */
          .status-success { color: #4ade80; } /* green-400 */
 
+         /* Key styling */
+         .key-item {
+             display: flex;
+             align-items: center;
+             gap: 0.5rem; /* space between color swatch and text */
+             margin-bottom: 0.25rem;
+         }
+         .key-swatch {
+             width: 1rem; /* 16px */
+             height: 1rem; /* 16px */
+             border-radius: 0.125rem; /* rounded-sm */
+             border: 1px solid #4b5563; /* gray-600 border */
+             flex-shrink: 0; /* Prevent swatch from shrinking */
+         }
+         .key-swatch-multi { /* Container for multiple small swatches */
+             display: flex;
+             border: 1px solid #4b5563;
+             border-radius: 0.125rem;
+             overflow: hidden; /* Clip corners */
+             flex-shrink: 0;
+         }
+          .key-swatch-multi > div { /* Individual small swatches */
+             width: 0.33rem; /* Smaller width for combined look */
+             height: 1rem;
+         }
+         .key-border-swatch {
+             width: 1rem; /* 16px */
+             height: 1rem; /* 16px */
+             border-radius: 0.125rem; /* rounded-sm */
+             border-width: 2px;
+             background-color: #1f2937; /* Match card background */
+             flex-shrink: 0;
+         }
+
+
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 p-4 sm:p-8"> <div class="container mx-auto max-w-6xl">
@@ -115,17 +150,36 @@
 
         <div id="character-grid" class="flex flex-row flex-wrap gap-6 justify-center items-start">
              </div>
+
+        <div id="key" class="mt-10 pt-6 border-t border-gray-700 max-w-md mx-auto text-xs text-gray-400">
+            <h3 class="text-sm font-semibold text-gray-200 text-center mb-3">Legend</h3>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <div>
+                    <div class="key-item"><div class="key-swatch bg-blue-500"></div><span>Temporary HP</span></div>
+                    <div class="key-item">
+                        <div class="key-swatch-multi">
+                            <div class="bg-green-500"></div>
+                            <div class="bg-yellow-500"></div>
+                            <div class="bg-red-600"></div>
+                        </div>
+                        <span>Base HP (Green/Yellow/Red)</span>
+                    </div>
+                    <div class="key-item"><div class="key-swatch bg-purple-600"></div><span>Hero's Feast / Misc</span></div>
+                 </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         // --- Configuration ---
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgOAmGQDoTykeEvaeWQoJDL7PM_Xedty0iqH4HsQ1GHoj_4gD2dheOtNH-4e09uIiZOP6zTQQ3pFSN/pub?output=csv';
         const REFRESH_INTERVAL_MS = 30000;
-        const MIN_BAR_HEIGHT_PX = 80;
-        const MAX_BAR_HEIGHT_PX = 240;
+        const MIN_BAR_HEIGHT_PX = 40;  // Reduced minimum height for better scaling
+        const MAX_BAR_HEIGHT_PX = 240; // Maximum height remains the same
         const YELLOW_THRESHOLD = 0.60;
         const RED_THRESHOLD = 0.25;
-        const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/60x60/374151/ffffff?text=?'; // Placeholder bg gray-700
+        const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/60x60/374151/ffffff?text=?';
 
         // --- DOM References ---
         const characterGrid = document.getElementById('character-grid');
@@ -133,80 +187,52 @@
         const refreshButton = document.getElementById('refresh-button');
 
         // --- State ---
-        let refreshIntervalId = null; // Stores the timer ID for auto-refresh
+        let refreshIntervalId = null;
 
         // --- Core Functions ---
 
-        /**
-         * Clears the existing auto-refresh timer.
-         */
         function clearAutoRefresh() {
             if (refreshIntervalId) {
                 clearInterval(refreshIntervalId);
                 refreshIntervalId = null;
-                // console.log("Auto-refresh timer cleared."); // Optional: for debugging
             }
         }
 
-        /**
-         * Starts the auto-refresh interval. Clears any existing interval first.
-         */
         function startAutoRefresh() {
-            clearAutoRefresh(); // Ensure no duplicate timers
-            // Set up the interval to call fetchAndProcessData periodically
+            clearAutoRefresh();
             refreshIntervalId = setInterval(fetchAndProcessData, REFRESH_INTERVAL_MS);
-            // console.log(`Auto-refresh started (${REFRESH_INTERVAL_MS / 1000} seconds).`); // Optional: for debugging
         }
 
-
-        /**
-         * Fetches data, updates display, handles states, and manages refresh timer.
-         */
         async function fetchAndProcessData() {
-            // --- Start of Fetch ---
-            clearAutoRefresh(); // Clear timer before fetching to prevent overlap
+            clearAutoRefresh();
             statusMessage.textContent = 'Fetching latest data...';
             statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border';
             refreshButton.disabled = true;
             refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
-            characterGrid.classList.add('grid-updating'); // Dim the grid visually
+            characterGrid.classList.add('grid-updating');
 
             try {
-                // --- Fetch Data ---
                 const response = await fetch(`${csvUrl}&t=${Date.now()}`);
                 if (!response.ok) throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 const csvData = await response.text();
-
-                // --- Process & Display ---
                 const characters = parseCSV(csvData);
-                displayCharacters(characters); // Update the UI
-
-                // --- Success State ---
+                displayCharacters(characters);
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Data loaded successfully. Auto-refreshing. Last updated: ${timestamp}`;
                 statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
-                startAutoRefresh(); // Restart the timer ONLY on successful fetch and display
+                startAutoRefresh();
 
             } catch (error) {
-                // --- Error State ---
                 console.error('Error fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
                 statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
-                // Do NOT restart timer on error, wait for manual refresh or next attempt if logic allows
-                // Optionally clear the grid or leave stale data? Leaving stale for now.
-                // characterGrid.innerHTML = '<p class="text-center text-red-400 w-full">Could not load character data.</p>';
             } finally {
-                // --- End of Fetch (Success or Error) ---
-                refreshButton.disabled = false; // Re-enable button
+                refreshButton.disabled = false;
                 refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                characterGrid.classList.remove('grid-updating'); // Un-dim the grid
+                characterGrid.classList.remove('grid-updating');
             }
         }
 
-        /**
-         * Parses CSV text into character objects including the Avatar URL.
-         * Uses latest confirmed column mapping.
-         */
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             const data = [];
@@ -221,22 +247,22 @@
                     const conBonus = parseInt(values[conBonusIndex]) || 0;
                     const featBonusHP = parseInt(values[featBonusHPIndex]) || 0;
                     const miscHP = parseInt(values[miscHPIndex]) || 0;
-                    let currentHP = parseInt(values[currentHPIndex]) || 0;
+                    let currentHPFromSheet = parseInt(values[currentHPIndex]) || 0;
                     const tempHP = parseInt(values[tempHPIndex]) || 0;
                     const avatarUrl = values[avatarIndex] || '';
                     const baseMaxHP = rolledHP + conBonus + featBonusHP;
-                    const cappedCurrentHP = Math.max(0, Math.min(currentHP, baseMaxHP));
+                    const cappedCurrentHP = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
                     const totalEffectiveMax = Math.max(1, baseMaxHP + miscHP + tempHP);
 
                     data.push({
                         name: values[nameIndex],
                         classLevel: values[classLevelIndex] || 'N/A',
                         avatarUrl: avatarUrl,
-                        currentHP: currentHP, // Raw Current HP from sheet (I)
-                        cappedCurrentHP: cappedCurrentHP, // Capped Current HP (for bar mask)
-                        tempHP: tempHP,           // Temporary HP (from J)
-                        miscHP: miscHP,           // Miscellaneous HP bonus (from G)
-                        baseMaxHP: baseMaxHP,         // Calculated Base Max (D+E+F)
+                        currentHP: currentHPFromSheet,
+                        cappedCurrentHP: cappedCurrentHP,
+                        tempHP: tempHP,
+                        miscHP: miscHP,
+                        baseMaxHP: baseMaxHP,
                         totalEffectiveMax: totalEffectiveMax
                     });
                 } else {
@@ -248,12 +274,8 @@
             return data;
         }
 
-        /**
-         * Renders character cards with refined dark theme styling and top alignment.
-         * Text format: Current / Max (+Temp)
-         */
         function displayCharacters(characters) {
-            characterGrid.innerHTML = ''; // Clear previous cards
+            characterGrid.innerHTML = '';
 
             if (characters.length === 0) {
                 characterGrid.innerHTML = '<p class="text-center text-gray-400 w-full">No valid character data found.</p>';
@@ -278,7 +300,7 @@
 
                 // Determine Health Status Classes (Bar Color & Card Border)
                 let baseColorClass = 'bg-green-500';
-                let borderColorClass = 'border-gray-700'; // Default border color from CSS
+                let borderColorClass = 'border-gray-700';
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHP / char.baseMaxHP : 0;
                 if (healthRatio <= RED_THRESHOLD) {
                     baseColorClass = 'bg-red-600';
@@ -294,10 +316,10 @@
                 const baseTooltip = `Base HP: ${char.cappedCurrentHP} / ${char.baseMaxHP}`;
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
-                // Health Text (Format: Current / Max (+Temp))
+                // Health Text (Format: Current / Max (+Temp) - using CAPPED current HP)
                 const tempHpString = char.tempHP > 0 ? ` (+${char.tempHP})` : '';
                 const maxEffectiveHpText = char.baseMaxHP + char.miscHP;
-                const healthText = `${char.currentHP} / ${maxEffectiveHpText}${tempHpString}`;
+                const healthText = `${char.cappedCurrentHP} / ${maxEffectiveHpText}${tempHpString}`;
 
                 // Set Card Classes
                 card.className = `character-card text-gray-100 rounded-lg shadow-lg p-4 border-2 ${borderColorClass} flex flex-col items-center gap-3 min-w-[150px]`;
@@ -352,14 +374,11 @@
         }
 
         // --- Initialization ---
-        // Add event listener for the manual refresh button
         refreshButton.addEventListener('click', () => {
             console.log("Manual refresh triggered.");
-            fetchAndProcessData(); // Fetch immediately on click, which will also clear/reset the timer
+            fetchAndProcessData();
         });
-
-        // Perform the initial data load when the script runs
-        fetchAndProcessData(); // This will also start the auto-refresh timer on success
+        fetchAndProcessData();
 
     </script>
 
