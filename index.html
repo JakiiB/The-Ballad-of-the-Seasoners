@@ -254,7 +254,7 @@
             </button>
         </div>
 
-        <div id="status-message" class="text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border">
+        <div id="status-message" class="text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto">
             Loading character data...
         </div>
 
@@ -334,7 +334,7 @@
             console.log(`[DEBUG] Starting fetch... (Manual: ${isManual})`);
             clearAutoRefresh();
             statusMessage.textContent = 'Fetching latest data...';
-            statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border';
+            statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
             refreshButton.disabled = true;
             refreshButtonContent.innerHTML = '<div class="spinner"></div> Fetching...';
             characterGrid.classList.add('grid-updating');
@@ -357,13 +357,13 @@
 
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Last updated: ${timestamp}`;
-                statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border';
+                statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
                 startAutoRefresh();
 
             } catch (error) {
                 console.error('[ERROR] Fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
-                statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border';
+                statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
                 // nerdDataContent.innerHTML = '<p class="text-center text-red-500">Could not load nerd data.</p>'; // Update nerd data on error
             } finally {
                 refreshButton.disabled = false;
@@ -404,18 +404,9 @@
                     const avatarUrl = values[avatarIndex] || '';
                     const baseMaxHP = rolledHP + conBonus + featBonusHP;
 
-                    // *** Calculate current HP relevant to Base+Misc pool for masking ***
-                    // Damage comes off Temp first, so if currentHPFromSheet is below baseMaxHP,
-                    // the difference represents damage taken from the Base+Misc pool.
-                    // However, the visual should reflect the state *after* Temp HP is gone.
-                    // So, the value we compare against baseAndMiscMaxHP is simply currentHPFromSheet.
                     const baseAndMiscMaxHP = baseMaxHP + miscHP;
                     const currentBaseAndMiscHP = Math.max(0, Math.min(currentHPFromSheet, baseAndMiscMaxHP));
-
-                    // Capped Current HP for bar *color* logic (still based on Base HP)
                     const cappedCurrentHPForColor = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
-
-                    // Total effective max for bar *scaling* (Base + Misc + Temp)
                     const totalEffectiveMax = Math.max(1, baseMaxHP + miscHP + tempHP);
 
                     data.push({
@@ -423,14 +414,14 @@
                         name: charName,
                         classLevel: values[classLevelIndex] || 'N/A',
                         avatarUrl: avatarUrl,
-                        currentHP: currentHPFromSheet, // Raw Current HP from sheet (Column J)
-                        maxHP: maxHPFromSheet, // Raw Max HP from sheet (Column I)
-                        currentBaseAndMiscHP: currentBaseAndMiscHP, // Current HP within the Base+Misc pool (capped)
-                        cappedCurrentHPForColor: cappedCurrentHPForColor, // Capped Current HP for color logic
+                        currentHP: currentHPFromSheet,
+                        maxHP: maxHPFromSheet,
+                        currentBaseAndMiscHP: currentBaseAndMiscHP,
+                        cappedCurrentHPForColor: cappedCurrentHPForColor,
                         tempHP: tempHP,
                         miscHP: miscHP,
                         baseMaxHP: baseMaxHP,
-                        baseAndMiscMaxHP: baseAndMiscMaxHP, // Store combined max
+                        baseAndMiscMaxHP: baseAndMiscMaxHP,
                         totalEffectiveMax: totalEffectiveMax,
                         rawRolled: rolledHP,
                         rawCon: conBonus,
@@ -459,7 +450,6 @@
 
                 if (previousState && previousState.data) {
                     const changes = [];
-                    // Compare raw current HP for history log consistency
                     if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP}→${char.currentHP}`);
                     if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP}→${char.tempHP}`);
                     if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP}→${char.miscHP}`);
@@ -476,12 +466,11 @@
                 }
 
                 newStates[char.id] = {
-                    data: { // Store data for next comparison
+                    data: {
                         currentHP: char.currentHP,
                         tempHP: char.tempHP,
                         miscHP: char.miscHP,
                         baseMaxHP: char.baseMaxHP,
-                        // Store all relevant values for comparison
                         cappedCurrentHPForColor: char.cappedCurrentHPForColor,
                         currentBaseAndMiscHP: char.currentBaseAndMiscHP,
                         maxHP: char.maxHP
@@ -511,27 +500,18 @@
             characters.forEach(char => {
                 const card = document.createElement('div');
 
-                // --- Calculations ---
-                // Segment percentages based on total potential health (Base + Misc + Temp)
+                // Calculations
                 const tempPerc = char.totalEffectiveMax > 0 ? (char.tempHP / char.totalEffectiveMax) * 100 : 0;
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
-
-                // --- Mask Calculation (Combined Base + Misc) ---
-                // Percentage depletion of the Base+Misc pool
                 const depletionPercPool = char.baseAndMiscMaxHP > 0 ? (1 - (char.currentBaseAndMiscHP / char.baseAndMiscMaxHP)) * 100 : 0;
-                // Combined height percentage of Base+Misc segments
                 const combinedBaseMiscPerc = basePerc + miscPerc;
-                // Mask height as a percentage of the *total bar height*
                 const maskHeightPerc = (depletionPercPool * combinedBaseMiscPerc) / 100;
-
-
-                // --- Height & Color ---
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
 
-                // Determine Health Status Classes (Bar Color & Card Border) - Color uses cappedCurrentHPForColor
+                // Determine Health Status Classes
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHPForColor / char.baseMaxHP : 0;
@@ -546,7 +526,7 @@
                 // Tooltips
                 const barTooltip = `Total Potential: ${char.totalEffectiveMax} (Temp: ${char.tempHP}, Base: ${char.baseMaxHP}, Misc: ${char.miscHP})`;
                 const tempTooltip = `Temp HP: ${char.tempHP}`;
-                const baseTooltip = `Base HP: ${char.cappedCurrentHPForColor} / ${char.baseMaxHP}`; // Shows capped value for color logic
+                const baseTooltip = `Base HP: ${char.cappedCurrentHPForColor} / ${char.baseMaxHP}`;
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
                 // Health Text (Format: J / I (+K))
@@ -571,7 +551,6 @@
                 `;
                 const healthBarDiv = document.createElement('div');
                 healthBarDiv.className = 'flex flex-col items-center w-full';
-                // Apply dynamic height to the main health bar container
                 healthBarDiv.innerHTML = `
                     <div class="health-bar bg-gray-600 rounded w-10 flex flex-col overflow-hidden relative border border-gray-500 shadow-inner mb-2"
                          style="height: ${barHeightPx}px;"
@@ -580,9 +559,9 @@
                         ${char.tempHP > 0 ? `<div class="w-full bg-blue-500 glow-blue flex-shrink-0" style="height: ${tempPerc}%" title="${tempTooltip}"></div>` : ''}
 
                         <div class="base-misc-container" style="height: ${combinedBaseMiscPerc}%">
-                             <div class="w-full h-full relative ${baseColorClass}" style="height: ${basePerc / combinedBaseMiscPerc * 100}%" title="${baseTooltip}">
+                             <div class="w-full h-full relative ${baseColorClass}" style="flex-basis: ${basePerc / combinedBaseMiscPerc * 100}%" title="${baseTooltip}">
                                 </div>
-                             ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex-shrink-0" style="height: ${miscPerc / combinedBaseMiscPerc * 100}%" title="${miscTooltip}"></div>` : ''}
+                             ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex-shrink-0" style="flex-basis: ${miscPerc / combinedBaseMiscPerc * 100}%" title="${miscTooltip}"></div>` : ''}
 
                             <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80 pointer-events-none"
                                  style="height: ${depletionPercPool}%">
