@@ -383,8 +383,8 @@
         // --- Configuration ---
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgOAmGQDoTykeEvaeWQoJDL7PM_Xedty0iqH4HsQ1GHoj_4gD2dheOtNH-4e09uIiZOP6zTQQ3pFSN/pub?output=csv';
         const REFRESH_INTERVAL_MS = 60000;
-        const MIN_BAR_HEIGHT_PX = 40;
-        const MAX_BAR_HEIGHT_PX = 240;
+        const ABSOLUTE_MIN_BAR_HEIGHT_PX = 20; // Smallest possible bar height in pixels
+        const MAX_BAR_HEIGHT_PX = 240; // Max height for the tallest bar
         const LIGHTLY_WOUNDED_THRESHOLD = 0.90;
         const WOUNDED_THRESHOLD = 0.60;
         const RED_THRESHOLD = 0.25;
@@ -751,6 +751,7 @@
 
         /**
          * Renders character cards including spell slots, resources, and flavour text.
+         * Uses proportional bar heights.
          */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
@@ -778,43 +779,42 @@
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
                 const depletionPercPool = char.baseAndMiscMaxHP > 0 ? (1 - (char.currentBaseAndMiscHP / char.baseAndMiscMaxHP)) * 100 : 0;
                 const combinedBaseMiscPercHeight = basePerc + miscPerc;
+
+                // *** Calculate Proportional Bar Height ***
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
-                let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
-                barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
+                let barHeightPx = heightRatio * MAX_BAR_HEIGHT_PX; // Scale based on max height
+                barHeightPx = Math.max(ABSOLUTE_MIN_BAR_HEIGHT_PX, barHeightPx); // Apply absolute minimum
 
                 // Determine Health Status Classes & Flavour Text
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
                 let statusQuote = '';
-                let quoteCategory = ''; // Track which category we're pulling from
-
-                // Use cappedCurrentHPForColor vs baseMaxHP for status determination
+                let quoteCategory = '';
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHPForColor / char.baseMaxHP : 0;
 
-                // *** Updated logic for 5+ states ***
-                if (char.cappedCurrentHPForColor <= 0) { // Downed <= 0
-                    baseColorClass = 'bg-black'; // Or maybe a dark grey
+                if (char.cappedCurrentHPForColor <= 0) {
+                    baseColorClass = 'bg-black';
                     borderColorClass = 'border-black';
                     quoteCategory = 'downed';
-                } else if (healthRatio <= RED_THRESHOLD) { // Critical <= 25%
+                } else if (healthRatio <= RED_THRESHOLD) {
                     baseColorClass = 'bg-red-600';
                     borderColorClass = 'border-red-600';
                     quoteCategory = 'critical';
-                } else if (healthRatio <= WOUNDED_THRESHOLD) { // Wounded <= 60%
+                } else if (healthRatio <= WOUNDED_THRESHOLD) {
                     baseColorClass = 'bg-yellow-500';
                     borderColorClass = 'border-yellow-500';
                     quoteCategory = 'wounded';
-                } else if (healthRatio <= LIGHTLY_WOUNDED_THRESHOLD) { // Lightly Wounded <= 90%
+                } else if (healthRatio <= LIGHTLY_WOUNDED_THRESHOLD) {
                     baseColorClass = 'bg-green-500';
-                    borderColorClass = 'border-gray-700'; // Default border
+                    borderColorClass = 'border-gray-700';
                     quoteCategory = 'lightlyWounded';
-                } else if (healthRatio < PERFECT_THRESHOLD) { // Healthy < 100% and > 90%
+                } else if (healthRatio < PERFECT_THRESHOLD) {
                      baseColorClass = 'bg-green-500';
-                     borderColorClass = 'border-gray-700'; // Default border
+                     borderColorClass = 'border-gray-700';
                      quoteCategory = 'healthy';
-                } else { // Perfect >= 100%
+                } else {
                     baseColorClass = 'bg-green-500';
-                    borderColorClass = 'border-gray-700'; // Default border
+                    borderColorClass = 'border-gray-700';
                     quoteCategory = 'perfect';
                 }
 
@@ -822,12 +822,10 @@
                 if (tempFlavourText[quoteCategory] && tempFlavourText[quoteCategory].length > 0) {
                     const quoteIndex = Math.floor(Math.random() * tempFlavourText[quoteCategory].length);
                     statusQuote = tempFlavourText[quoteCategory][quoteIndex];
-                    // Remove the selected quote from the temporary array for this refresh cycle
                     tempFlavourText[quoteCategory].splice(quoteIndex, 1);
                 } else {
-                    statusQuote = "..."; // Fallback if we run out of unique quotes for a category
+                    statusQuote = "...";
                 }
-
 
                 // Tooltips
                 const barTooltip = `Total Potential: ${char.totalEffectiveMax} (Temp: ${char.tempHP}, Base: ${char.baseMaxHP}, Misc: ${char.miscHP})`;
