@@ -380,13 +380,11 @@
         const REFRESH_INTERVAL_MS = 60000;
         const MIN_BAR_HEIGHT_PX = 40;
         const MAX_BAR_HEIGHT_PX = 240;
-        // *** Updated Thresholds for Flavour Text ***
-        const PERFECT_THRESHOLD = 1.0; // >= 100%
-        const HEALTHY_THRESHOLD = 0.90; // > 90%
-        const LIGHTLY_WOUNDED_THRESHOLD = 0.60; // > 60%
-        const WOUNDED_THRESHOLD = 0.25; // > 25%
-        // Critical is <= 25% and > 0%
-        // Downed is <= 0%
+        // *** Corrected constant name usage ***
+        const LIGHTLY_WOUNDED_THRESHOLD = 0.90;
+        const WOUNDED_THRESHOLD = 0.60;
+        const RED_THRESHOLD = 0.25; // Renamed back from CRITICAL_THRESHOLD
+        const PERFECT_THRESHOLD = 1.0;
         const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/60x60/374151/ffffff?text=?';
         const MAX_HISTORY_LENGTH = 10;
 
@@ -761,7 +759,7 @@
                     baseColorClass = 'bg-black'; // Or maybe a dark grey
                     borderColorClass = 'border-black';
                     statusQuote = flavourText.downed[Math.floor(Math.random() * flavourText.downed.length)];
-                } else if (healthRatio <= CRITICAL_THRESHOLD) { // Critical <= 25%
+                } else if (healthRatio <= RED_THRESHOLD) { // Critical <= 25%
                     baseColorClass = 'bg-red-600';
                     borderColorClass = 'border-red-600';
                     statusQuote = flavourText.critical[Math.floor(Math.random() * flavourText.critical.length)];
