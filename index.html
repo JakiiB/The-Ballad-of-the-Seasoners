@@ -298,6 +298,11 @@
               background-color: #f59e0b; /* amber-500 */
               border-color: #f59e0b;
          }
+         /* Extra SP Feat */
+         .extra-sp-feat {
+              background-color: #14b8a6; /* teal-500 */
+              border-color: #14b8a6;
+         }
          /* Ki Points */
          .ki-point {
               background-color: #10b981; /* emerald-500 */
@@ -516,22 +521,22 @@
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             const data = [];
-            // Define column indices
+            // Define column indices based on latest screenshot
             const avatarIndex = 1, nameIndex = 2, classLevelIndex = 3;
             const rolledHPIndex = 4, conBonusIndex = 5, featBonusHPIndex = 6;
             const miscHPIndex = 7, maxHPIndex = 8, currentHPIndex = 9, tempHPIndex = 10;
-            // Spell Slot Indices (N to V -> 13 to 21)
-            const slotIndices = [13, 14, 15, 16, 17, 18, 19, 20, 21];
-            const pactMagicIndex = 22; // Column W
-            const sorceryPointsIndex = 23; // Column X
-            const kiPointsIndex = 24; // Column Y
-            const bardicInspirationIndex = 25; // Column Z
+            const slotIndices = [13, 14, 15, 16, 17, 18, 19, 20, 21]; // N to V
+            const pactMagicIndex = 22; // W
+            const sorceryPointsIndex = 23; // X
+            const extraSPFeatIndex = 24; // Y - NEW
+            const kiPointsIndex = 25; // Z - Shifted
+            const bardicInspirationIndex = 26; // AA - Shifted
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
                 const charName = values[nameIndex];
-                // Check if basic required columns exist
-                if (values.length > Math.max(nameIndex, currentHPIndex, tempHPIndex) && charName) {
+                // Update validation check for new max index
+                if (values.length > Math.max(nameIndex, currentHPIndex, tempHPIndex, bardicInspirationIndex) && charName) {
                     const charId = `char-${charName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
                     const rolledHP = parseInt(values[rolledHPIndex]) || 0;
                     const conBonus = parseInt(values[conBonusIndex]) || 0;
@@ -592,11 +597,27 @@
                         if (spString && spString !== 'N/A') {
                             const parts = spString.split('/');
                             if (parts.length === 2) {
-                                const current = parseInt(parts[0]); // Sorcery points are usually current/max
+                                const current = parseInt(parts[0]);
                                 const total = parseInt(parts[1]);
                                 if (!isNaN(current) && !isNaN(total) && total > 0) {
                                     sorceryPoints = { current: current, total: total };
-                                    hasSlots = true; // Treat as having resources
+                                    hasSlots = true;
+                                }
+                            }
+                        }
+                    }
+                    // --- Parse Extra SP Feat --- NEW
+                    let extraSPFeat = null;
+                    if (extraSPFeatIndex < values.length) {
+                        const extraSpString = values[extraSPFeatIndex];
+                        if (extraSpString && extraSpString !== 'N/A') {
+                            const parts = extraSpString.split('/');
+                            if (parts.length === 2) {
+                                const current = parseInt(parts[0]);
+                                const total = parseInt(parts[1]);
+                                if (!isNaN(current) && !isNaN(total) && total > 0) {
+                                    extraSPFeat = { current: current, total: total };
+                                    hasSlots = true;
                                 }
                             }
                         }
@@ -624,7 +645,7 @@
                         if (biString && biString !== 'N/A') {
                             const parts = biString.split('/');
                             if (parts.length === 2) {
-                                const current = parseInt(parts[0]); // Bardic inspiration is usually current/max uses
+                                const current = parseInt(parts[0]);
                                 const total = parseInt(parts[1]);
                                 if (!isNaN(current) && !isNaN(total) && total > 0) {
                                     bardicInspiration = { current: current, total: total };
@@ -652,10 +673,11 @@
                         rawRolled: rolledHP,
                         rawCon: conBonus,
                         rawFeat: featBonusHP,
-                        hasSlots: hasSlots, // True if has slots OR resources
+                        hasSlots: hasSlots,
                         spellSlots: spellSlots,
                         pactMagic: pactMagic,
                         sorceryPoints: sorceryPoints,
+                        extraSPFeat: extraSPFeat, // Added Extra SP
                         kiPoints: kiPoints,
                         bardicInspiration: bardicInspiration
                     });
@@ -687,6 +709,7 @@
                     if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP}→${char.miscHP}`);
                     // Add resource change detection for history
                     if (JSON.stringify(char.sorceryPoints) !== JSON.stringify(previousState.data.sorceryPoints)) changes.push(`Sorcery ${previousState.data.sorceryPoints?.current ?? 0}/${previousState.data.sorceryPoints?.total ?? 0}→${char.sorceryPoints?.current ?? 0}/${char.sorceryPoints?.total ?? 0}`);
+                    if (JSON.stringify(char.extraSPFeat) !== JSON.stringify(previousState.data.extraSPFeat)) changes.push(`Extra SP ${previousState.data.extraSPFeat?.current ?? 0}/${previousState.data.extraSPFeat?.total ?? 0}→${char.extraSPFeat?.current ?? 0}/${char.extraSPFeat?.total ?? 0}`); // Added Extra SP history
                     if (JSON.stringify(char.kiPoints) !== JSON.stringify(previousState.data.kiPoints)) changes.push(`Ki ${previousState.data.kiPoints?.current ?? 0}/${previousState.data.kiPoints?.total ?? 0}→${char.kiPoints?.current ?? 0}/${char.kiPoints?.total ?? 0}`);
                     if (JSON.stringify(char.bardicInspiration) !== JSON.stringify(previousState.data.bardicInspiration)) changes.push(`Bardic ${previousState.data.bardicInspiration?.current ?? 0}/${previousState.data.bardicInspiration?.total ?? 0}→${char.bardicInspiration?.current ?? 0}/${char.bardicInspiration?.total ?? 0}`);
                     // Add spell slot change detection if needed
@@ -715,6 +738,7 @@
                         spellSlots: char.spellSlots,
                         pactMagic: char.pactMagic,
                         sorceryPoints: char.sorceryPoints,
+                        extraSPFeat: char.extraSPFeat, // Store Extra SP
                         kiPoints: char.kiPoints,
                         bardicInspiration: char.bardicInspiration
                     },
@@ -727,7 +751,6 @@
 
         /**
          * Renders character cards including spell slots, resources, and flavour text.
-         * Uses unique quote selection logic.
          */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
@@ -844,14 +867,24 @@
                          }
                          resourcesHtml += `</div></div>`;
                     }
-                    // Sorcery Points
-                    if (char.sorceryPoints) {
+                    // *** COMBINED Sorcery Points Section ***
+                    if (char.sorceryPoints || char.extraSPFeat) {
                          resourcesHtml += `<div class="resource-group">`;
                          resourcesHtml += `<span class="resource-label">Sorcery Points</span>`;
                          resourcesHtml += `<div class="resource-wrapper">`;
-                         for (let i = 0; i < char.sorceryPoints.total; i++) {
-                             const pointClass = i < char.sorceryPoints.current ? 'sorcery-point' : 'resource-available';
-                             resourcesHtml += `<div class="resource-dot ${pointClass}" title="Sorcery Point (${i < char.sorceryPoints.current ? 'Available' : 'Spent'})"></div>`;
+                         // Regular Sorcery Points (Amber)
+                         if (char.sorceryPoints) {
+                             for (let i = 0; i < char.sorceryPoints.total; i++) {
+                                 const pointClass = i < char.sorceryPoints.current ? 'sorcery-point' : 'resource-available';
+                                 resourcesHtml += `<div class="resource-dot ${pointClass}" title="Sorcery Point (${i < char.sorceryPoints.current ? 'Available' : 'Spent'})"></div>`;
+                             }
+                         }
+                         // Extra SP Feat Points (Teal)
+                         if (char.extraSPFeat) {
+                             for (let i = 0; i < char.extraSPFeat.total; i++) {
+                                 const pointClass = i < char.extraSPFeat.current ? 'extra-sp-feat' : 'resource-available';
+                                 resourcesHtml += `<div class="resource-dot ${pointClass}" title="Extra SP (${i < char.extraSPFeat.current ? 'Available' : 'Spent'})"></div>`;
+                             }
                          }
                          resourcesHtml += `</div></div>`;
                     }
@@ -956,6 +989,7 @@
                      });
                      if(char.pactMagic) slotNerdString += ` Pact: ${char.pactMagic.used}/${char.pactMagic.total}`;
                      if(char.sorceryPoints) slotNerdString += ` Sorc: ${char.sorceryPoints.current}/${char.sorceryPoints.total}`;
+                     if(char.extraSPFeat) slotNerdString += ` ExtraSP: ${char.extraSPFeat.current}/${char.extraSPFeat.total}`; // Added Extra SP
                      if(char.kiPoints) slotNerdString += ` Ki: ${char.kiPoints.current}/${char.kiPoints.total}`;
                      if(char.bardicInspiration) slotNerdString += ` Bardic: ${char.bardicInspiration.current}/${char.bardicInspiration.total}`;
                      slotNerdString = slotNerdString.trim();
