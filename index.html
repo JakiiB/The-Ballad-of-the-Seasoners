@@ -42,6 +42,7 @@
              justify-content: flex-start; /* Align items to the top */
              background-color: #1f2937; /* Card Background: gray-800 */
              border-color: #374151; /* Default border gray-700 */
+             padding-bottom: 1rem; /* Ensure padding at bottom */
         }
         /* Style for dimming cards during update */
         .grid-updating .character-card {
@@ -230,7 +231,60 @@
             flex-direction: column;
             width: 100%; /* Take full width of parent */
             overflow: hidden; /* Ensure mask doesn't overflow */
+             flex-grow: 1; /* Allow it to take up remaining space if needed */
+             flex-shrink: 1;
         }
+        .base-segment {
+             width: 100%;
+             position: relative; /* Needed if we put text inside */
+        }
+        .misc-segment {
+             width: 100%;
+        }
+
+        /* Spell Slot Styling */
+        .spell-slots-container {
+            width: 100%;
+            margin-top: 0.75rem; /* mt-3 */
+            padding-top: 0.75rem; /* pt-3 */
+            border-top: 1px solid #4b5563; /* gray-600 */
+        }
+        .slot-level-group {
+            margin-bottom: 0.5rem; /* mb-2 */
+            text-align: center;
+        }
+        .slot-level-label {
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            color: #9ca3af; /* gray-400 */
+            margin-bottom: 0.25rem; /* mb-1 */
+            display: block; /* Ensure it takes its own line */
+        }
+        .slots-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem; /* gap-1 */
+            justify-content: center;
+        }
+        .slot {
+            width: 0.625rem; /* w-2.5 */
+            height: 0.625rem; /* h-2.5 */
+            border-radius: 50%; /* rounded-full */
+            border: 1px solid #6b7280; /* gray-500 */
+        }
+        .slot-available {
+            background-color: transparent; /* Or a light gray */
+        }
+        .slot-used {
+            background-color: #60a5fa; /* blue-400 */
+            border-color: #60a5fa;
+        }
+        /* Single Red Color for Pact Magic */
+         .pact-slot {
+             background-color: #dc2626; /* red-600 */
+             border-color: #dc2626;
+         }
+         /* Removed .pact-slot-used as it's now the same */
 
 
     </style>
@@ -334,7 +388,7 @@
             console.log(`[DEBUG] Starting fetch... (Manual: ${isManual})`);
             clearAutoRefresh();
             statusMessage.textContent = 'Fetching latest data...';
-            statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
+            statusMessage.className = 'text-center status-loading mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto';
             refreshButton.disabled = true;
             refreshButtonContent.innerHTML = '<div class="spinner"></div> Fetching...';
             characterGrid.classList.add('grid-updating');
@@ -357,13 +411,13 @@
 
                 const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 statusMessage.textContent = `Last updated: ${timestamp}`;
-                statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
+                statusMessage.className = 'text-center status-success mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto';
                 startAutoRefresh();
 
             } catch (error) {
                 console.error('[ERROR] Fetching or processing data:', error);
                 statusMessage.textContent = `Error loading data: ${error.message}. Check console or try refreshing.`;
-                statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto'; // Keep max-w here
+                statusMessage.className = 'text-center status-error mb-6 text-sm sm:text-base rounded-md p-2 border max-w-md mx-auto';
                 // nerdDataContent.innerHTML = '<p class="text-center text-red-500">Could not load nerd data.</p>'; // Update nerd data on error
             } finally {
                 refreshButton.disabled = false;
@@ -379,20 +433,24 @@
         }
 
         /**
-         * Parses CSV text into character objects including the Avatar URL.
-         * Reads Max HP from sheet (Column I) for text display.
+         * Parses CSV text into character objects including spell slots.
          */
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             const data = [];
+            // Define column indices
             const avatarIndex = 1, nameIndex = 2, classLevelIndex = 3;
             const rolledHPIndex = 4, conBonusIndex = 5, featBonusHPIndex = 6;
             const miscHPIndex = 7, maxHPIndex = 8, currentHPIndex = 9, tempHPIndex = 10;
+            // Spell Slot Indices (N to V -> 13 to 21)
+            const slotIndices = [13, 14, 15, 16, 17, 18, 19, 20, 21];
+            const pactMagicIndex = 22; // Column W
 
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',').map(v => v.trim());
                 const charName = values[nameIndex];
-                if (values.length > Math.max(nameIndex, rolledHPIndex, conBonusIndex, featBonusHPIndex, miscHPIndex, maxHPIndex, currentHPIndex, tempHPIndex, avatarIndex) && charName) {
+                // Check if basic required columns exist
+                if (values.length > Math.max(nameIndex, currentHPIndex, tempHPIndex) && charName) {
                     const charId = `char-${charName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
                     const rolledHP = parseInt(values[rolledHPIndex]) || 0;
                     const conBonus = parseInt(values[conBonusIndex]) || 0;
@@ -403,11 +461,52 @@
                     const tempHP = parseInt(values[tempHPIndex]) || 0;
                     const avatarUrl = values[avatarIndex] || '';
                     const baseMaxHP = rolledHP + conBonus + featBonusHP;
-
                     const baseAndMiscMaxHP = baseMaxHP + miscHP;
                     const currentBaseAndMiscHP = Math.max(0, Math.min(currentHPFromSheet, baseAndMiscMaxHP));
                     const cappedCurrentHPForColor = Math.max(0, Math.min(currentHPFromSheet, baseMaxHP));
                     const totalEffectiveMax = Math.max(1, baseMaxHP + miscHP + tempHP);
+
+                    // --- Parse Spell Slots ---
+                    const spellSlots = [];
+                    let hasSlots = false;
+                    for (let level = 0; level < slotIndices.length; level++) {
+                        const index = slotIndices[level];
+                        // Check if index exists before accessing
+                        if (index < values.length) {
+                            const slotString = values[index];
+                            if (slotString && slotString !== 'N/A') {
+                                const parts = slotString.split('/');
+                                if (parts.length === 2) {
+                                    const used = parseInt(parts[0]);
+                                    const total = parseInt(parts[1]);
+                                    if (!isNaN(used) && !isNaN(total) && total > 0) {
+                                        spellSlots[level] = { level: level + 1, used: used, total: total };
+                                        hasSlots = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- Parse Pact Magic ---
+                    let pactMagic = null;
+                    // Check if index exists before accessing
+                    if (pactMagicIndex < values.length) {
+                        const pactString = values[pactMagicIndex];
+                        if (pactString && pactString !== 'N/A') {
+                            // Simplified parsing - just need used/total
+                             const parts = pactString.split(':').pop().split('/'); // Get "1/2" part
+                             if (parts.length === 2) {
+                                const used = parseInt(parts[0]);
+                                const total = parseInt(parts[1]);
+                                if (!isNaN(used) && !isNaN(total) && total > 0) {
+                                    pactMagic = { used: used, total: total }; // Level not stored anymore
+                                    hasSlots = true;
+                                }
+                            }
+                        }
+                    }
+
 
                     data.push({
                         id: charId,
@@ -425,7 +524,10 @@
                         totalEffectiveMax: totalEffectiveMax,
                         rawRolled: rolledHP,
                         rawCon: conBonus,
-                        rawFeat: featBonusHP
+                        rawFeat: featBonusHP,
+                        hasSlots: hasSlots,
+                        spellSlots: spellSlots,
+                        pactMagic: pactMagic
                     });
                 } else {
                     if (lines[i].trim().length > 0 && i > 0) {
@@ -453,6 +555,8 @@
                     if (char.currentHP !== previousState.data.currentHP) changes.push(`HP ${previousState.data.currentHP}→${char.currentHP}`);
                     if (char.tempHP !== previousState.data.tempHP) changes.push(`Temp ${previousState.data.tempHP}→${char.tempHP}`);
                     if (char.miscHP !== previousState.data.miscHP) changes.push(`Misc ${previousState.data.miscHP}→${char.miscHP}`);
+                    // Add slot change detection here if desired for history
+
                     if (changes.length > 0) historyMessage = `${timestamp}: ${changes.join(', ')}`;
                 } else {
                     historyMessage = `${timestamp}: Initial state: HP ${char.currentHP}, Temp ${char.tempHP}, Misc ${char.miscHP}`;
@@ -466,14 +570,17 @@
                 }
 
                 newStates[char.id] = {
-                    data: {
+                    data: { // Store data for next comparison
                         currentHP: char.currentHP,
                         tempHP: char.tempHP,
                         miscHP: char.miscHP,
                         baseMaxHP: char.baseMaxHP,
                         cappedCurrentHPForColor: char.cappedCurrentHPForColor,
                         currentBaseAndMiscHP: char.currentBaseAndMiscHP,
-                        maxHP: char.maxHP
+                        maxHP: char.maxHP,
+                        // Store slot data for comparison if needed later
+                        spellSlots: char.spellSlots,
+                        pactMagic: char.pactMagic
                     },
                     history: history
                  };
@@ -483,8 +590,7 @@
 
 
         /**
-         * Renders character cards (without nerd data section).
-         * Implements combined masking for Base + Misc HP.
+         * Renders character cards including spell slots.
          */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
@@ -505,8 +611,7 @@
                 const basePerc = char.totalEffectiveMax > 0 ? (char.baseMaxHP / char.totalEffectiveMax) * 100 : 0;
                 const miscPerc = char.totalEffectiveMax > 0 ? (char.miscHP / char.totalEffectiveMax) * 100 : 0;
                 const depletionPercPool = char.baseAndMiscMaxHP > 0 ? (1 - (char.currentBaseAndMiscHP / char.baseAndMiscMaxHP)) * 100 : 0;
-                const combinedBaseMiscPerc = basePerc + miscPerc;
-                const maskHeightPerc = (depletionPercPool * combinedBaseMiscPerc) / 100;
+                const combinedBaseMiscPercHeight = basePerc + miscPerc;
                 const heightRatio = char.totalEffectiveMax / safeMaxHpInParty;
                 let barHeightPx = MIN_BAR_HEIGHT_PX + (MAX_BAR_HEIGHT_PX - MIN_BAR_HEIGHT_PX) * heightRatio;
                 barHeightPx = Math.max(MIN_BAR_HEIGHT_PX, Math.min(MAX_BAR_HEIGHT_PX, barHeightPx));
@@ -529,14 +634,48 @@
                 const baseTooltip = `Base HP: ${char.cappedCurrentHPForColor} / ${char.baseMaxHP}`;
                 const miscTooltip = `Misc HP: ${char.miscHP}`;
 
-                // Health Text (Format: J / I (+K))
-                const tempHpString = char.tempHP > 0 ? ` (+${char.tempHP})` : '';
+                // Health Text (Format: J / I +K) - Removed parentheses
+                const tempHpString = char.tempHP > 0 ? ` +${char.tempHP}` : ''; // Removed ()
                 const healthText = `${char.currentHP} / ${char.maxHP}${tempHpString}`;
+
+                // --- Generate Spell Slot HTML ---
+                let spellSlotsHtml = '';
+                if (char.hasSlots) {
+                    spellSlotsHtml += '<div class="spell-slots-container">';
+                    // Regular Slots
+                    char.spellSlots.forEach(slotData => {
+                        if (slotData) {
+                            spellSlotsHtml += `<div class="slot-level-group">`;
+                            spellSlotsHtml += `<span class="slot-level-label">Level ${slotData.level}</span>`;
+                            spellSlotsHtml += `<div class="slots-wrapper">`;
+                            for (let i = 0; i < slotData.total; i++) {
+                                const slotClass = i < slotData.used ? 'slot-used' : 'slot-available';
+                                spellSlotsHtml += `<div class="slot ${slotClass}" title="Level ${slotData.level} Slot (${i < slotData.used ? 'Used' : 'Available'})"></div>`;
+                            }
+                             spellSlotsHtml += `</div></div>`;
+                        }
+                    });
+                    // Pact Magic - Simplified label and single color
+                    if (char.pactMagic) {
+                         spellSlotsHtml += `<div class="slot-level-group">`;
+                         // *** Removed Level from label ***
+                         spellSlotsHtml += `<span class="slot-level-label">Pact Magic</span>`;
+                         spellSlotsHtml += `<div class="slots-wrapper">`;
+                         for (let i = 0; i < char.pactMagic.total; i++) {
+                             // *** Use single red color based on used status ***
+                             const slotClass = i < char.pactMagic.used ? 'pact-slot' : 'slot-available'; // Use pact-slot for used, available for empty
+                             spellSlotsHtml += `<div class="slot ${slotClass}" title="Pact Magic Slot (${i < char.pactMagic.used ? 'Used' : 'Available'})"></div>`;
+                         }
+                         spellSlotsHtml += `</div></div>`;
+                    }
+                    spellSlotsHtml += '</div>';
+                }
+
 
                 // Set Card Classes
                 card.className = `character-card text-gray-100 rounded-lg shadow-lg p-4 border-2 ${borderColorClass} flex flex-col items-center gap-3 min-w-[150px]`;
 
-                // Construct Card HTML (Info + Bar only)
+                // Construct Card HTML (Info + Bar + Slots)
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'info-section mb-2';
                 infoDiv.innerHTML = `
@@ -555,25 +694,25 @@
                     <div class="health-bar bg-gray-600 rounded w-10 flex flex-col overflow-hidden relative border border-gray-500 shadow-inner mb-2"
                          style="height: ${barHeightPx}px;"
                          title="${barTooltip}">
-
                         ${char.tempHP > 0 ? `<div class="w-full bg-blue-500 glow-blue flex-shrink-0" style="height: ${tempPerc}%" title="${tempTooltip}"></div>` : ''}
-
-                        <div class="base-misc-container" style="height: ${combinedBaseMiscPerc}%">
-                             <div class="w-full h-full relative ${baseColorClass}" style="flex-basis: ${basePerc / combinedBaseMiscPerc * 100}%" title="${baseTooltip}">
-                                </div>
-                             ${char.miscHP > 0 ? `<div class="w-full bg-purple-600 glow-purple flex-shrink-0" style="flex-basis: ${miscPerc / combinedBaseMiscPerc * 100}%" title="${miscTooltip}"></div>` : ''}
-
-                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80 pointer-events-none"
-                                 style="height: ${depletionPercPool}%">
-                            </div>
+                        <div class="base-misc-container" style="height: ${combinedBaseMiscPercHeight}%">
+                             <div class="base-segment ${baseColorClass}" style="flex-basis: ${basePerc / combinedBaseMiscPercHeight * 100}%" title="${baseTooltip}"></div>
+                             ${char.miscHP > 0 ? `<div class="misc-segment bg-purple-600 glow-purple flex-shrink-0" style="flex-basis: ${miscPerc / combinedBaseMiscPercHeight * 100}%" title="${miscTooltip}"></div>` : ''}
+                            <div class="health-mask absolute top-0 left-0 w-full bg-gray-700 opacity-80 pointer-events-none" style="height: ${depletionPercPool}%"></div>
                         </div>
-
                     </div>
                     <p class="text-sm text-center font-medium text-gray-300">${healthText}</p> `;
 
                 // Append elements to card
                 card.appendChild(infoDiv);
                 card.appendChild(healthBarDiv);
+                if(spellSlotsHtml) { // Only add spell slot div if there's content
+                    const spellSlotDiv = document.createElement('div');
+                    // Ensure spell slot container takes full width for centering
+                    spellSlotDiv.className = 'w-full';
+                    spellSlotDiv.innerHTML = spellSlotsHtml;
+                    card.appendChild(spellSlotDiv);
+                }
                 characterGrid.appendChild(card);
             });
         }
@@ -581,7 +720,6 @@
 
         /**
          * Populates the consolidated "Data for Nerds" section.
-         * @param {Array<object>} characters - The current character data array.
          */
         function displayNerdData(characters) {
             let nerdHtml = '';
@@ -595,9 +733,24 @@
             characters.forEach(char => {
                  const currentState = characterStates[char.id];
                  const historyListContent = currentState?.history.map(entry => `<li>${entry}</li>`).join('') || '<li>No history yet.</li>';
-                 const textDisplayCurrent = char.currentHP; // Raw from sheet (J)
-                 const textDisplayMax = char.maxHP; // Raw from sheet (I)
-                 const barFillCurrent = char.currentBaseAndMiscHP; // Value determining combined bar fill
+                 const textDisplayCurrent = char.currentHP;
+                 const textDisplayMax = char.maxHP;
+                 const barFillCurrent = char.currentBaseAndMiscHP;
+
+                 // Generate slot strings for nerd data
+                 let slotNerdString = 'N/A';
+                 if(char.hasSlots) {
+                     slotNerdString = '';
+                     char.spellSlots.forEach(slot => {
+                         if(slot) slotNerdString += ` L${slot.level}: ${slot.used}/${slot.total}`;
+                     });
+                     if(char.pactMagic) {
+                          // *** Updated nerd string for pact magic ***
+                          slotNerdString += ` Pact: ${char.pactMagic.used}/${char.pactMagic.total}`;
+                     }
+                     slotNerdString = slotNerdString.trim(); // Remove leading/trailing space
+                 }
+
 
                  nerdHtml += `
                     <div class="nerd-character-section">
@@ -605,8 +758,8 @@
                         <p>Base HP = Rolled (${char.rawRolled}) + CON (${char.rawCon}) + Feat (${char.rawFeat}) = <code>${char.baseMaxHP}</code></p>
                         <p>Misc HP (H) = <code>${char.miscHP}</code></p>
                         <p>Temp HP (K) = <code>${char.tempHP}</code></p>
-                        <p>Text Display = Sheet Current (J) / Sheet Max (I) (+ Temp (K)) = <code>${textDisplayCurrent} / ${textDisplayMax} ${char.tempHP > 0 ? '(+'+char.tempHP+')' : ''}</code></p>
-                        <p>Bar Fill = Sheet Current (J: ${char.currentHP}) capped at (Base+Misc) (${char.baseAndMiscMaxHP}) = <code>${barFillCurrent}</code></p>
+                        <p>Text Display = Sheet Current (J) / Sheet Max (I) (+ Temp (K)) = <code>${textDisplayCurrent} / ${textDisplayMax} ${char.tempHP > 0 ? '+'+char.tempHP : ''}</code></p> <p>Bar Fill = Sheet Current (J: ${char.currentHP}) capped at (Base+Misc) (${char.baseAndMiscMaxHP}) = <code>${barFillCurrent}</code></p>
+                        <p>Spell Slots (N-W): <code>${slotNerdString}</code></p>
                         <h5>History (Last ${MAX_HISTORY_LENGTH}):</h5>
                         <ul id="history-list-${char.id}">${historyListContent}</ul>
                     </div>
