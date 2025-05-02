@@ -380,10 +380,9 @@
         const REFRESH_INTERVAL_MS = 60000;
         const MIN_BAR_HEIGHT_PX = 40;
         const MAX_BAR_HEIGHT_PX = 240;
-        // *** Corrected constant name usage ***
         const LIGHTLY_WOUNDED_THRESHOLD = 0.90;
         const WOUNDED_THRESHOLD = 0.60;
-        const RED_THRESHOLD = 0.25; // Renamed back from CRITICAL_THRESHOLD
+        const RED_THRESHOLD = 0.25;
         const PERFECT_THRESHOLD = 1.0;
         const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/60x60/374151/ffffff?text=?';
         const MAX_HISTORY_LENGTH = 10;
@@ -392,36 +391,42 @@
         const flavourText = {
              perfect: [ // >= 100%
                 "Untouched and ready.", "Pristine condition.", "Not a scratch.", "Fighting fit.",
-                "In peak form.", "Full health, full fury.", "Like they just woke up.", "Perfectly unharmed."
+                "In peak form.", "Full health, full fury.", "Like they just woke up.", "Perfectly unharmed.",
+                "Ready to rumble.", "Fresh as a daisy."
             ],
             healthy: [ // > 90%
                 "Looking strong.", "Ready for anything.", "Unfazed.", "Shrugging off the hits.",
                 "Holding strong.", "Vigorous and ready.", "Looks fresh.", "No sign of wear.",
-                "Standing tall.", "Barely breaking a sweat.", "Full of fight.", "Seems fine."
+                "Standing tall.", "Barely breaking a sweat.", "Full of fight.", "Seems fine.",
+                "Confident stance.", "Alert and focused."
             ],
             lightlyWounded: [ // <= 90% and > 60%
                 "Just a scratch.", "Took a minor hit.", "Winced slightly.", "Grazed.",
                 "Slightly bruised.", "Shook that one off.", "Still looking good.", "A flesh wound!",
                 "Not slowing down yet.", "A minor nick.", "Ignoring the pain.", "Still confident.",
-                "A bit scuffed.", "Caught that one on the arm.", "Just warming up."
+                "A bit scuffed.", "Caught that one on the arm.", "Just warming up.", "Gritting teeth slightly.",
+                "Minor cut visible."
             ],
             wounded: [ // <= 60% and > 25%
                 "Showing some wear.", "Grimacing, but pushing on.", "Bleeding, but not broken.",
                 "Definitely feeling that.", "Pace is slowing.", "Grunting with effort.",
                 "Wounded, but defiant.", "Staggered, but still in the fight.", "Visibly injured.",
                 "Leaning heavily.", "That looked painful.", "Losing steam.", "Favoring a side.",
-                "Blood dripping.", "Taking heavy breaths.", "Sweat beading.", "Looking rough."
+                "Blood dripping.", "Taking heavy breaths.", "Sweat beading.", "Looking rough.",
+                "Clutching a wound.", "Moving cautiously."
             ],
             critical: [ // <= 25% and > 0
                 "On their last leg.", "Looks about ready to drop.", "Barely conscious.",
                 "Death seems close.", "Faltering badly.", "Clinging to life.",
                 "Bloodied and broken.", "One foot in the grave.", "Reeling from the blow.",
                 "Gasping for breath.", "Looks dire.", "About to collapse.", "Stumbling weakly.",
-                "Eyes glazing over.", "Trembling uncontrollably.", "Barely holding on.", "Needs help!"
+                "Eyes glazing over.", "Trembling uncontrollably.", "Barely holding on.", "Needs help!",
+                "Voice is weak.", "Struggling to stand."
             ],
             downed: [ // <= 0
                 "Down for the count.", "Unconscious.", "Out cold.", "Collapsed in a heap.",
-                "Motionless.", "No signs of life?", "Looks like it's over.", "Needs immediate aid!"
+                "Motionless.", "No signs of life?", "Looks like it's over.", "Needs immediate aid!",
+                "Making death saves.", "Bleeding out.", "In dire straits."
             ]
         };
 
@@ -722,6 +727,7 @@
 
         /**
          * Renders character cards including spell slots, resources, and flavour text.
+         * Uses unique quote selection logic.
          */
         function displayCharacters(characters) {
             characterGrid.innerHTML = '';
@@ -733,6 +739,12 @@
 
             const maxHpInParty = characters.reduce((max, char) => Math.max(max, char.totalEffectiveMax), 0);
             const safeMaxHpInParty = Math.max(1, maxHpInParty);
+
+            // --- Create temporary copies of quote arrays for unique selection per refresh ---
+            let tempFlavourText = {};
+            for (const key in flavourText) {
+                tempFlavourText[key] = [...flavourText[key]]; // Shallow copy arrays
+            }
 
             characters.forEach(char => {
                 const card = document.createElement('div');
@@ -751,6 +763,8 @@
                 let baseColorClass = 'bg-green-500';
                 let borderColorClass = 'border-gray-700';
                 let statusQuote = '';
+                let quoteCategory = ''; // Track which category we're pulling from
+
                 // Use cappedCurrentHPForColor vs baseMaxHP for status determination
                 const healthRatio = char.baseMaxHP > 0 ? char.cappedCurrentHPForColor / char.baseMaxHP : 0;
 
@@ -758,27 +772,37 @@
                 if (char.cappedCurrentHPForColor <= 0) { // Downed <= 0
                     baseColorClass = 'bg-black'; // Or maybe a dark grey
                     borderColorClass = 'border-black';
-                    statusQuote = flavourText.downed[Math.floor(Math.random() * flavourText.downed.length)];
+                    quoteCategory = 'downed';
                 } else if (healthRatio <= RED_THRESHOLD) { // Critical <= 25%
                     baseColorClass = 'bg-red-600';
                     borderColorClass = 'border-red-600';
-                    statusQuote = flavourText.critical[Math.floor(Math.random() * flavourText.critical.length)];
+                    quoteCategory = 'critical';
                 } else if (healthRatio <= WOUNDED_THRESHOLD) { // Wounded <= 60%
                     baseColorClass = 'bg-yellow-500';
                     borderColorClass = 'border-yellow-500';
-                    statusQuote = flavourText.wounded[Math.floor(Math.random() * flavourText.wounded.length)];
+                    quoteCategory = 'wounded';
                 } else if (healthRatio <= LIGHTLY_WOUNDED_THRESHOLD) { // Lightly Wounded <= 90%
                     baseColorClass = 'bg-green-500';
                     borderColorClass = 'border-gray-700'; // Default border
-                    statusQuote = flavourText.lightlyWounded[Math.floor(Math.random() * flavourText.lightlyWounded.length)];
+                    quoteCategory = 'lightlyWounded';
                 } else if (healthRatio < PERFECT_THRESHOLD) { // Healthy < 100% and > 90%
                      baseColorClass = 'bg-green-500';
                      borderColorClass = 'border-gray-700'; // Default border
-                     statusQuote = flavourText.healthy[Math.floor(Math.random() * flavourText.healthy.length)];
+                     quoteCategory = 'healthy';
                 } else { // Perfect >= 100%
                     baseColorClass = 'bg-green-500';
                     borderColorClass = 'border-gray-700'; // Default border
-                    statusQuote = flavourText.perfect[Math.floor(Math.random() * flavourText.perfect.length)];
+                    quoteCategory = 'perfect';
+                }
+
+                // --- Select Unique Quote ---
+                if (tempFlavourText[quoteCategory] && tempFlavourText[quoteCategory].length > 0) {
+                    const quoteIndex = Math.floor(Math.random() * tempFlavourText[quoteCategory].length);
+                    statusQuote = tempFlavourText[quoteCategory][quoteIndex];
+                    // Remove the selected quote from the temporary array for this refresh cycle
+                    tempFlavourText[quoteCategory].splice(quoteIndex, 1);
+                } else {
+                    statusQuote = "..."; // Fallback if we run out of unique quotes for a category
                 }
 
 
