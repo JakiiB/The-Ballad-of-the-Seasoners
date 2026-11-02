@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Ballad of the Seasoners</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <link rel="icon" href="https://www.dndbeyond.com/favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1><a href="https://www.dndbeyond.com/campaigns/962577" target="_blank" style="color:inherit;text-decoration:none;" title="Open D&D Beyond Campaign">THE BALLAD OF THE SEASONERS ↗</a></h1>
+      <span class="campaign-tag">D&D 5E - Live D&D Beyond</span>
+    </div>
+    <div class="header-controls">
+      <div class="sync-indicator active" id="syncIndicator" onclick="window.toggleAutoSync()" title="Click to pause or resume auto-syncing">
+        <span class="pulse-dot"></span>
+        <span>Live Sync ON (20s)</span>
+      </div>
+      <span id="networkStatusBadge" class="network-status-badge" style="display:none;"></span>
+      <span id="syncTimestamp" style="font-size:0.75rem; color:var(--text-muted);"></span>
+      <button class="btn btn-secondary search-trigger-btn" onclick="window.openPartySearch()" title="Quick Party Search (Ctrl+K)">
+        <span class="search-btn-icon">🔍</span>
+        <span>Search</span>
+        <kbd class="kbd-hint">Ctrl K</kbd>
+      </button>
+      <button class="btn btn-secondary" onclick="window.openGuideModal()" title="How to use this command center">
+        <span>📖 How to Use</span>
+      </button>
+      <button class="btn btn-secondary pulse-btn" id="btnCombatPulse" onclick="window.toggleCombatLog()" title="Toggle Live Rolls">⚡ Live Rolls <span id="combatPulseBadge" class="pulse-badge-count" style="display:none;">0</span></button>
+      <button class="btn btn-primary" id="btnSync" onclick="window.syncAll()">↻ Refresh Now</button>
+      <button class="btn btn-secondary" onclick="window.openRosterModal()">⚙ Party URLs</button>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="party" onclick="window.switchTab('party')">⚔ Party Vitals</button>
+    <button class="tab-btn" data-tab="sheet" onclick="window.switchTab('sheet')">📜 Character Inspector</button>
+    <button class="tab-btn" data-tab="vagrant" onclick="window.switchTab('vagrant')">⚓ The Vagrant</button>
+    <button class="tab-btn" data-tab="perihelion" onclick="window.switchTab('perihelion')">🏰 Perihelion House</button>
+  </nav>
+
+  <main class="main-content">
+    <div id="viewContainer">
+      <div class="empty-state">
+        <div class="spinner"></div>
+        <p>Connecting to D&D Beyond live feeds...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modals & Overlays -->
+  <div id="modalContainer"></div>
+  <div id="guideModalContainer"></div>
+  <div id="searchModalContainer"></div>
+  <div id="combatPulseContainer"></div>
+  <div id="diceRollerContainer"></div>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    window.__SEASONERS_CLOUD_URL__ = "https://script.google.com/macros/s/AKfycbzPJCgIpQKUSTQj6JFX4D05fHb1Rj1ErdM-uznSzPm7AcS7Le0e-34NA8TEuZq_koSv5w/exec";
+  </script>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

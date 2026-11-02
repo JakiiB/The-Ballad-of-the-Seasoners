@@ -1,0 +1,171 @@
+{
+  "stronghold": {
+    "name": "Perihelion House",
+    "guild": "Equinox",
+    "location": "Sigil - Border of the Clerk's Ward and Market Ward",
+    "strongholdRadius": "120 feet",
+    "frequency": "Once per short or long rest (Initiative Count 20, losing ties)",
+    "facilities": [
+      {
+        "name": "Portal Conflux",
+        "staff": "None",
+        "boon": "Maintains up to 3 two-way Gate portals (indefinite duration, no slot/material/concentration, cannot forcibly draw creatures). Only dispelled by 7th+ level Dispel Magic; reforms after 30 days."
+      },
+      {
+        "name": "Invocation Chamber",
+        "staff": "Hraldr Brightblade (Cleric)",
+        "boon": "Permanent Magic Circle dais (DC 15). 1/day (5th+ level spellcaster): Contact Other Plane (adv on Int save) or Scrying (target dis on Wis save) without a slot. 1/30 days (6th+ level spellcaster): Planar Ally without a slot (bound to room for 8h, cannot harm summoner in room)."
+      },
+      {
+        "name": "Gardens",
+        "staff": "Tarin Cloudgaze (Firbolg) & Count Thulan",
+        "boon": "Daily: 3 magical fruits granting Lesser Restoration (lasts 24h). 1/30 days (8h work or 7 days by Tarin): Create Midnight Tears, Pale Tincture, Potion of Greater Healing, Torpor, or Truth Serum."
+      },
+      {
+        "name": "Training Rooms",
+        "staff": "Lhamo (Aarakocra)",
+        "boon": "7 days training and meditation grants Advantage on two random saving throws (1d6) for the next 7 days."
+      },
+      {
+        "name": "Tavern (The Spice Rack)",
+        "staff": "Captain Sedna (Water Genasi)",
+        "boon": "1/7 days spy network (location events over next 7 days OR familiar creature's location and past 7 days' movements). 'The Tallest Halfling' stout grants Enlarge for 24 hours (no save)."
+      },
+      {
+        "name": "Dining Hall",
+        "staff": "Skerrin (Halfling Cook)",
+        "boon": "1/30 days banquet (1h prep, 1h consume): Heroes' Feast feeding twice as many creatures."
+      },
+      {
+        "name": "Headquarters",
+        "staff": "Corcoran (Veteran Soldier)",
+        "boon": "7 days planning: Roll two d20s. For the next 7 days, replace any attack roll, saving throw, or ability check made by yourself or a creature you can see (each used once, max 1/turn)."
+      }
+    ],
+    "actions": [
+      {
+        "id": "power_chord",
+        "character": "Pasquale Étienne",
+        "name": "Power Chord",
+        "initiative": 20,
+        "description": "Until initiative count 20 on the next round, all inspiration dice produce their maximum result when rolled, followed by the sounding of a two-note chord: one root note and another a fifth higher than the root."
+      },
+      {
+        "id": "end_to_suffering",
+        "character": "Tang",
+        "name": "An End to Suffering",
+        "initiative": 20,
+        "description": "Until initiative count 20 on the next round, transcend your physical form: you are immune to all but psychic damage, and gain truesight out to 60 feet."
+      },
+      {
+        "id": "arcane_apotheosis",
+        "character": "Petrus Moonshine",
+        "name": "Arcane Apotheosis",
+        "initiative": 20,
+        "description": "Immediately cast three spells from your list of known spells, using spell slots as normal."
+      },
+      {
+        "id": "swift_and_certain",
+        "character": "Meridon Dorvaris",
+        "name": "Swift and Certain",
+        "initiative": 20,
+        "description": "Until initiative count 20 on the next round, all enemies within 60 feet of you are marked for death. The first time you hit a marked enemy on a turn, roll half the number of Sneak Attack dice for your level (round up) - the marked creature takes necrotic damage equal to the roll's total."
+      },
+      {
+        "id": "aflame_ashen_gaze",
+        "character": "Sister Agnes",
+        "name": "Aflame with the Ashen Gaze",
+        "initiative": 20,
+        "description": "Shafts of golden light stab down from the sky, penetrating walls and ceilings, targeting all hostile creatures within 60 feet (even hidden or invisible). Roll a number of d8s equal to your Wisdom modifier - creatures who fail a Wisdom saving throw against your spell save DC take radiant damage equal to your roll."
+      }
+    ]
+  },
+  "ship": {
+    "name": "The Vagrant",
+    "type": "Spelljammer",
+    "origin": "Rebuilt at Erasmus & Sons (Sigil)",
+    "dimensions": {
+      "keelLengthFt": 155,
+      "beamFt": 25
+    },
+    "crew": 30,
+    "cargoTons": 20,
+    "hull": {
+      "currentHp": 450,
+      "maxHp": 450,
+      "ac": 17,
+      "damageThreshold": 30,
+      "material": "Wood & Copper Plating"
+    },
+    "crewRoster": [
+      { "role": "Captain & Spelljammer", "name": "Pasquale Étienne" },
+      { "role": "First Mate & Spelljammer", "name": "Sister Agnes" },
+      { "role": "Ship's Doctor", "name": "Ethelred" },
+      { "role": "Ship's Cook", "name": "Uncle Alvy" },
+      { "role": "Deckhand", "name": "Bucket" },
+      { "role": "Crew", "name": "30 Sailors" }
+    ],
+    "movement": {
+      "speedFlyFt": 50,
+      "speedMph": "5 1/2 mph",
+      "wildspaceSpeed": "100 million miles in 24 hours",
+      "turnRule": "One 90-degree turn per move"
+    },
+    "turnActions": {
+      "count": 3,
+      "description": "On its turn, the spelljammer can take 3 actions (2 if <20 crew, 1 if <10 crew, 0 if <3 crew), choosing from: Fire Eldritch Blasters, Fire Magic Missile Silos, or Move (with Piercing Ram)."
+    },
+    "armament": [
+      {
+        "key": "eldritch_blasters",
+        "name": "Eldritch Blasters",
+        "count": 4,
+        "attackBonus": 10,
+        "range": "400/1,200 ft.",
+        "damage": "35 (10d6) force",
+        "target": "one target",
+        "notes": "Swirling magical glyphs on the ship's hull. Requires 1 action to aim, and 1 action to make 4 attacks."
+      },
+      {
+        "key": "magic_missile_silos",
+        "name": "Magic Missile Silos",
+        "count": 2,
+        "attackBonus": 10,
+        "range": "1,000/3,000 ft.",
+        "damage": "49 (11d8) force",
+        "notes": "1 action to make 2 attacks. If the spelljammer does not move on its turn, these attacks hit automatically."
+      },
+      {
+        "key": "piercing_ram",
+        "name": "Piercing Ram",
+        "count": 1,
+        "attackBonus": 10,
+        "range": "0 ft.",
+        "damage": "88 (16d10) piercing",
+        "notes": "Melee Weapon Attack as part of Move into another object or Gargantuan creature. Hit: 88 (16d10) piercing; Vagrant takes half damage and comes to a dead stop. Miss: No damage, target moves to nearest unoccupied space, Vagrant continues moving."
+      }
+    ],
+    "specialSystems": [
+      {
+        "name": "Spelljammer Helm",
+        "effect": "Requires attunement by a creature with Spellcasting or Pact Magic. Maintain concentration while sitting in it to propel/maneuver the ship, see and hear on/around the vessel from any chosen spot aboard, fire ship weaponry, and use Immovable Anchors and Portal Conflux."
+      },
+      {
+        "name": "Storm Drive",
+        "effect": "While attuned to the helm, cast Fog Cloud at will (30 ft. tall, 120-ft. radius cylinder centered on lowest point of hull; moves with ship; cannot be dispersed by strong winds; attuned spelljammer can see through the fog)."
+      },
+      {
+        "name": "Immovable Anchors (4)",
+        "effect": "2 at bow, 2 at stern; act like immovable rods. Attuned spelljammer activates/deactivates at will without crew to suspend ship in mid-air. Activating while moving damages the hull."
+      },
+      {
+        "name": "Portal Conflux",
+        "effect": "As an action while attuned to the helm and touching the ship, cast Plane Shift on the Vagrant and all aboard (1/24 hours, or by expending a 7th+ level slot if known). Cannot be used if any creatures are inside the Special Quarters."
+      },
+      {
+        "name": "Special Quarters",
+        "effect": "Officers' mess and quarters in a demiplane accessed next to the Spelljammer's quarters. Immune to all divination magic."
+      }
+    ]
+  }
+}

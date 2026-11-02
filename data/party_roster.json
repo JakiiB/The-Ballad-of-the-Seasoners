@@ -1,0 +1,56 @@
+[
+  {
+    "id": "pasquale",
+    "name": "Pasquale Étienne",
+    "player": "Jake",
+    "dndBeyondId": "124205395",
+    "url": "https://www.dndbeyond.com/characters/124205395",
+    "role": "",
+    "enabled": true
+  },
+  {
+    "id": "agnes",
+    "name": "Sister Agnes",
+    "player": "Agnes",
+    "dndBeyondId": "46268812",
+    "url": "https://www.dndbeyond.com/characters/46268812",
+    "role": "",
+    "enabled": true
+  },
+  {
+    "id": "petrus",
+    "name": "Petrus Moonshine",
+    "player": "Petrus",
+    "dndBeyondId": "65780522",
+    "url": "https://www.dndbeyond.com/characters/65780522",
+    "role": "",
+    "enabled": true
+  },
+  {
+    "id": "tang",
+    "name": "Tang",
+    "player": "Tang",
+    "dndBeyondId": "91618985",
+    "url": "https://www.dndbeyond.com/characters/91618985",
+    "role": "",
+    "enabled": true
+  },
+  {
+    "id": "meridon",
+    "name": "Meridon Dorvaris",
+    "player": "Meridon",
+    "dndBeyondId": "46711646",
+    "url": "https://www.dndbeyond.com/characters/46711646",
+    "role": "",
+    "enabled": true
+  },
+  {
+    "id": "char_1789134939508",
+    "name": "Buttercup Nightsoil",
+    "player": "",
+    "role": "",
+    "url": "https://www.dndbeyond.com/characters/150434509",
+    "dndBeyondId": "150434509",
+    "enabled": false
+  }
+]
